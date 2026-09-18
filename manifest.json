@@ -1,0 +1,160 @@
+{
+  "manifest_version": 3,
+  "name": "Create Calendar events from mail content",
+  "short_name": "Mail content to Calendar event",
+  "description": "This plugin offers to create new events based on the email subject and content",
+  "homepage_url": "https://github.com/LouisJULIEN/thunderbird_plugin_mail_to_event",
+  "version": "0.27",
+  "author": "Louis JULIEN",
+  "developer": {
+    "name": "Louis JULIEN",
+    "url": "https://github.com/LouisJULIEN"
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "louisjulien.mail_to_event@addons.thunderbird.net",
+      "strict_min_version": "137.0",
+      "strict_max_version": "152.*"
+    }
+  },
+  "message_display_action": {
+    "default_popup": "create_event_button/pop_up_button.html",
+    "default_title": "Create event",
+    "default_icon": "images/calendar-light.svg",
+    "theme_icons": [
+      {
+        "light": "images/calendar-dark.svg",
+        "dark": "images/calendar-light.svg",
+        "size": 16
+      }
+    ]
+  },
+  "background": {
+    "scripts": [
+      "background/register_content_script_injector.js",
+      "background/register_message_listeners.js"
+    ],
+    "type": "module"
+  },
+  "icons": {
+    "64": "images/icon-render.png",
+    "32": "images/icon-render.png",
+    "16": "images/icon-render.png"
+  },
+  "permissions": [
+    "messagesRead",
+    "scripting",
+    "storage"
+  ],
+  "experiment_apis": {
+    "calendar_calendars": {
+      "schema": "experiments/calendar/schema/calendar-calendars.json",
+      "parent": {
+        "scopes": [
+          "addon_parent"
+        ],
+        "script": "experiments/calendar/parent/ext-calendar-calendars.js",
+        "paths": [
+          [
+            "calendar",
+            "calendars"
+          ]
+        ]
+      }
+    },
+    "calendar_items": {
+      "schema": "experiments/calendar/schema/calendar-items.json",
+      "parent": {
+        "scopes": [
+          "addon_parent"
+        ],
+        "script": "experiments/calendar/parent/ext-calendar-items.js",
+        "paths": [
+          [
+            "calendar",
+            "items"
+          ]
+        ]
+      }
+    },
+    "calendar_provider": {
+      "schema": "experiments/calendar/schema/calendar-provider.json",
+      "parent": {
+        "scopes": [
+          "addon_parent"
+        ],
+        "script": "experiments/calendar/parent/ext-calendar-provider.js",
+        "events": [
+          "startup"
+        ],
+        "paths": [
+          [
+            "calendar",
+            "provider"
+          ]
+        ]
+      }
+    },
+    "calendar_timezones": {
+      "schema": "experiments/calendar/schema/calendar-timezones.json",
+      "parent": {
+        "scopes": [
+          "addon_parent"
+        ],
+        "script": "experiments/calendar/parent/ext-calendar-timezones.js",
+        "paths": [
+          [
+            "calendar",
+            "timezones"
+          ]
+        ]
+      },
+      "child": {
+        "scopes": [
+          "addon_child"
+        ],
+        "script": "experiments/calendar/child/ext-calendar-timezones.js",
+        "paths": [
+          [
+            "calendar",
+            "timezones"
+          ]
+        ]
+      }
+    },
+    "calendarItemAction": {
+      "schema": "experiments/calendar/schema/calendarItemAction.json",
+      "parent": {
+        "scopes": [
+          "addon_parent"
+        ],
+        "script": "experiments/calendar/parent/ext-calendarItemAction.js",
+        "events": [
+          "startup"
+        ],
+        "paths": [
+          [
+            "calendarItemAction"
+          ]
+        ]
+      }
+    },
+    "calendarItemDetails": {
+      "schema": "experiments/calendar/schema/calendarItemDetails.json",
+      "parent": {
+        "scopes": [
+          "addon_parent"
+        ],
+        "script": "experiments/calendar/parent/ext-calendarItemDetails.js",
+        "events": [
+          "startup"
+        ],
+        "paths": [
+          [
+            "calendarItemDetails"
+          ]
+        ]
+      }
+    }
+  }
+}

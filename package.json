@@ -1,0 +1,27 @@
+{
+  "dependencies": {
+    "@louis.jln/extract-date": "4.0.5",
+    "@louis.jln/extract-time": "4.0.0",
+    "esbuild": "0.28.1",
+    "franc": "^6.2.0"
+  },
+  "devDependencies": {
+    "@types/thunderbird-webext-browser": "^127.0.0",
+    "chai": "^6.2.2",
+    "jsdom": "^29.1.1",
+    "mocha": "12.0.0-beta-9.3",
+    "mockdate": "^3.0.5",
+    "webext-linter": "github:thunderbird/webext-linter"
+  },
+  "type": "module",
+  "scripts": {
+    "dev": "./scripts/bundle_plugin_watch.sh",
+    "lint": "./scripts/lint_thunderbird.sh",
+    "test": "mocha ./tests/*",
+    "bundle-dependencies": "./scripts/bundle_dependencies.sh",
+    "bundle-content-script": "./scripts/bundle_content_script.sh",
+    "bundle-plugin": "npm run bundle-dependencies && npm run bundle-content-script && ./scripts/zip_to_publish.sh",
+    "build": "npm run bundle-plugin"
+  },
+  "version": "1.0.0"
+}

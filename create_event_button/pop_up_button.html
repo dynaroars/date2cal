@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Create event</title>
+    <link rel="stylesheet" type="text/css" media="screen" href="pop_up_button.css">
+</head>
+
+<body class="pluginMailToEvent-popup">
+
+<div class="pluginMailToEvent-event-creator">
+    <div id="detected-language"></div>
+
+    <!-- Title, calendar, timezone injected here by pop_up_button.js (createEventFormTop) -->
+
+    <div id="dates-selector"></div>
+
+    <div class="end-date-selector">
+        <div class="end-date-header">
+            <label for="end-date-input">End date</label>
+            <label class="all-day-label">
+                <input type="checkbox" id="all-day"> All day
+            </label>
+        </div>
+        <input id="end-date-input" type="datetime-local" value="">
+    </div>
+
+    <!-- Location, description injected here by pop_up_button.js (createEventFormBottom) -->
+
+    <button type="button" id="create-calendar-event" disabled>Create event</button>
+</div>
+
+<script type="module" src="pop_up_button.js"></script>
+</body>
+
+</html>

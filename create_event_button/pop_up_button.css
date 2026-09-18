@@ -1,0 +1,270 @@
+.pluginMailToEvent-popup {
+    margin: 0;
+}
+
+.pluginMailToEvent-popup > .pluginMailToEvent-event-creator {
+    border: none;
+    box-shadow: none;
+    border-radius: 0;
+    width: 350px;
+}
+
+.pluginMailToEvent-drag-handle {
+    height: 16px;
+    margin: -12px -12px 8px;
+    border-radius: 8px 8px 0 0;
+    background: var(--border-color);
+    cursor: grab;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+}
+
+.pluginMailToEvent-drag-handle::before,
+.pluginMailToEvent-drag-handle::after {
+    content: '';
+    width: 24px;
+    height: 2px;
+    background: var(--text-secondary);
+    border-radius: 1px;
+}
+
+.pluginMailToEvent-drag-handle:active {
+    cursor: grabbing;
+}
+
+.pluginMailToEvent-event-creator--dragging {
+    opacity: 0.8 !important;
+}
+
+.pluginMailToEvent-highlightDate {
+    text-decoration: underline;
+    text-decoration-color: #0a84ff;
+    text-underline-offset: 2px;
+    cursor: pointer;
+}
+
+.pluginMailToEvent-event-creator {
+    --bg-primary: #ffffff;
+    --bg-input: #f9f9fb;
+    --text-primary: #15141a;
+    --text-secondary: #5b5b66;
+    --border-color: #cfcfd8;
+    --accent: #0a84ff;
+    --accent-hover: #0060df;
+    --success: #058b00;
+    --error: #d70022;
+
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 13px;
+    line-height: 1.4;
+    padding: 12px;
+    box-sizing: border-box;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    min-width: 300px;
+    z-index: 103; /* https://github.com/LouisJULIEN/thunderbird_plugin_mail_to_event/issues/7 */
+}
+
+@media (prefers-color-scheme: dark) {
+    .pluginMailToEvent-event-creator {
+        --bg-primary: #2b2a33;
+        --bg-input: #42414d;
+        --text-primary: #fbfbfe;
+        --text-secondary: #cfcfd8;
+        --border-color: #5b5b66;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    }
+}
+
+#detected-language:not(:empty) {
+    display: inline-block;
+    float: right;
+    font-size: 10px;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    padding: 1px 6px;
+    margin-bottom: 4px;
+}
+
+.pluginMailToEvent-event-creator input[type="text"],
+.pluginMailToEvent-event-creator input[type="datetime-local"],
+.pluginMailToEvent-event-creator input[type="date"],
+.pluginMailToEvent-event-creator textarea,
+.pluginMailToEvent-event-creator select {
+    box-sizing: border-box;
+    width: 100%;
+    height: 28px;
+    padding: 4px 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: var(--bg-input);
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 13px;
+}
+
+.pluginMailToEvent-event-creator textarea {
+    height: auto;
+    resize: vertical;
+}
+
+.form-group {
+    margin-bottom: 8px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 2px;
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+#dates-selector {
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.pluginMailToEvent-calendarSection {
+    margin-top: 5px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.pluginMailToEvent-calendarSection select {
+    flex: 1;
+}
+
+.pluginMailToEvent-calendarSection label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.pluginMailToEvent-timezoneSection {
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.pluginMailToEvent-timezoneSection select {
+    flex: 1;
+}
+
+.pluginMailToEvent-timezoneSection label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+
+.one-date-selector {
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.start-date-input {
+    flex: 1;
+}
+
+.submit-start-date {
+    width: auto;
+    height: 28px;
+    padding: 4px 10px;
+    border: none;
+    border-radius: 4px;
+    background: var(--accent);
+    color: #fff;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.one-date-selector .submit-start-date:hover {
+    border-color: var(--accent);
+}
+
+.one-date-selector  input[aria-selected="true"] {
+    border: 2px solid var(--accent);
+}
+
+.end-date-selector {
+    margin-bottom: 8px;
+}
+
+.end-date-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 2px;
+}
+
+.end-date-header label {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.all-day-label {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+}
+
+#create-calendar-event,
+.pluginMailToEvent-create-btn {
+    display: block;
+    width: 100%;
+    height: 32px;
+    margin-top: 8px;
+    padding: 0 16px;
+    border: none;
+    border-radius: 4px;
+    background: var(--accent);
+    color: #fff;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+#create-calendar-event:hover:not(:disabled),
+.pluginMailToEvent-create-btn:hover:not(:disabled) {
+    background: var(--accent-hover);
+}
+
+#create-calendar-event:disabled,
+.pluginMailToEvent-create-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+#create-calendar-event.success,
+.pluginMailToEvent-create-btn.success {
+    background: var(--success);
+    opacity: 1;
+    cursor: default;
+}
+
+#create-calendar-event.error,
+.pluginMailToEvent-create-btn.error {
+    background: var(--error);
+    opacity: 1;
+}
