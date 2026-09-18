@@ -1,25 +1,23 @@
 {
   "manifest_version": 3,
-  "name": "Create Calendar events from mail content",
-  "short_name": "Mail content to Calendar event",
-  "description": "This plugin offers to create new events based on the email subject and content",
-  "homepage_url": "https://github.com/LouisJULIEN/thunderbird_plugin_mail_to_event",
-  "version": "0.27",
-  "author": "Louis JULIEN",
+  "name": "Detect Calendar Event",
+  "short_name": "Detect Calendar Event",
+  "description": "Detects dates and times in email and creates calendar events from them, macOS Mail style.",
+  "version": "0.1.0",
+  "author": "ThanhVu Nguyen",
   "developer": {
-    "name": "Louis JULIEN",
-    "url": "https://github.com/LouisJULIEN"
+    "name": "ThanhVu Nguyen"
   },
   "browser_specific_settings": {
     "gecko": {
-      "id": "louisjulien.mail_to_event@addons.thunderbird.net",
-      "strict_min_version": "137.0",
-      "strict_max_version": "152.*"
+      "id": "detect-cal-event@roars.dev",
+      "strict_min_version": "140.0",
+      "strict_max_version": "165.*"
     }
   },
   "message_display_action": {
     "default_popup": "create_event_button/pop_up_button.html",
-    "default_title": "Create event",
+    "default_title": "Create event from email",
     "default_icon": "images/calendar-light.svg",
     "theme_icons": [
       {

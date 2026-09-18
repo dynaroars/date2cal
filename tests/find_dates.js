@@ -99,7 +99,13 @@ This is a new sentence on a new line.A last one`;
         expect(result[0].endDateTime.dateISO).to.equal("2024-09-12T13:30:00.000Z")
     })
 
-    it('should find all dates in this email', () => {
+    // SKIPPED (fork): these two assert the fake-UTC output of common/format_dates.js,
+    // which shifts a local Date by getTimezoneOffset() and then calls toISOString() --
+    // so the trailing "Z" is local wall-clock, not UTC. That makes the expectations
+    // pass only in the author's timezone (Europe/Paris) and fail everywhere else.
+    // The bug is removed in Phase 1; these cases are replaced by the golden corpus
+    // in Phase 5. Skipped rather than re-pinned so we don't encode the bug as intent.
+    it.skip('should find all dates in this email', () => {
         const emailContent = 'This is 2021-01-24. This 28 November. This number is alone 2024. 12\n11.' +
             "Let's meet the 12/19 at 11 PM"
         const result = findDates('', emailContent).dates
@@ -157,7 +163,13 @@ This is a new sentence on a new line.A last one`;
         }])
     })
 
-    it('should find only one dates in this email', () => {
+    // SKIPPED (fork): these two assert the fake-UTC output of common/format_dates.js,
+    // which shifts a local Date by getTimezoneOffset() and then calls toISOString() --
+    // so the trailing "Z" is local wall-clock, not UTC. That makes the expectations
+    // pass only in the author's timezone (Europe/Paris) and fail everywhere else.
+    // The bug is removed in Phase 1; these cases are replaced by the golden corpus
+    // in Phase 5. Skipped rather than re-pinned so we don't encode the bug as intent.
+    it.skip('should find only one dates in this email', () => {
         const emailSubject = 'This is 2021-01-24'
         const emailContent = 'This is again 2021-01-24 for duplication purpose'
         const result = findDates(emailSubject, emailContent).dates

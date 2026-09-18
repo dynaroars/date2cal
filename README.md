@@ -1,20 +1,98 @@
-# Email to event - Thunderbird plugin
-This Thunderbird plugin enables easy creation of a calendar event based on an email content. Upon user request, dates in the email's subject and body are detected to make event creation easy
+# Detect Calendar Event — Thunderbird add-on
 
-This plugin was inspired by how smartphones enable easy event creation of their email client.
+Detects dates and times in an email and turns them into calendar events with one
+click, the way macOS Mail does.
 
-## Create addon zip XPI file
+Fork of [LouisJULIEN/thunderbird_plugin_mail_to_event](https://github.com/LouisJULIEN/thunderbird_plugin_mail_to_event)
+(BSD-3-Clause) at `984800f`. The calendar Experiment APIs and UI shell are
+upstream's; the detection engine is being rewritten. See `../PLAN.md`.
+
+**English only** by design — no language auto-detection.
+
+## Requirements
+
+- Thunderbird **140–165** (developed against 154)
+- Node.js 20+
+
+`manifest.json` pins `strict_max_version: "165.*"`. Thunderbird's add-on linter
+*requires* a `strict_max_version` on any add-on shipping Experiment APIs, because
+experiments reach into internals (`resource:///modules/calendar/*`) that can
+change in any release. Upstream pinned `152.*`, which is why the original add-on
+silently refused to install on current Thunderbird. When Thunderbird passes 165,
+bump this one line and re-test the experiment — do not simply delete it.
+
+## Build
+
 ```bash
-npm ci --omit=dev
-npm run build
+npm install     # `prepare` hook builds dependencies/ and the content-script bundle automatically
 ```
 
-## Development
+> **Important:** the add-on will *not* work from a bare checkout. `dependencies/`
+> and `content_scripts/highlight_dates/bundle/` are generated and gitignored; every
+> module imports from them. Skipping the build makes the background script fail to
+> load with no visible error — this is the single most common way to get "no dates
+> are ever detected". The `prepare` hook exists so a plain `npm install` is enough.
 
-```shell
-npm install
-npm run bundle-dependencies
-npm run dev
-npm run lint
+Rebuild after changing source:
+
+```bash
+npm run setup   # one-shot rebuild
+npm run dev     # watch + rebuild on change
 ```
 
+## Install into Thunderbird (temporary, for development)
+
+1. Thunderbird → **Tools → Developer Tools → Debug Add-ons**
+   (or go to `about:debugging#/runtime/this-firefox`)
+2. **Load Temporary Add-on…**
+3. Select this directory's `manifest.json`
+
+The add-on is removed when Thunderbird closes — reload it after each restart.
+
+> **Experiment APIs require a full Thunderbird restart to pick up changes.**
+> Reloading the temporary add-on is enough for plain JS/HTML/CSS edits, but any
+> change under `experiments/` needs Thunderbird restarted.
+
+### Flatpak Thunderbird
+
+The flatpak sandbox cannot read `~/git` by default, so *Load Temporary Add-on*
+will not see this directory. Grant read-only access once:
+
+```bash
+flatpak override --user \
+  --filesystem=/home/tnguyen/git/projects/tbird_detect_cal_event:ro \
+  org.mozilla.thunderbird
+```
+
+Undo with `flatpak override --user --reset org.mozilla.thunderbird`.
+
+### Developing against a scratch profile (recommended)
+
+Experiment APIs touch Thunderbird internals and a bad build can disturb a real
+mail profile. Use a throwaway profile:
+
+```bash
+flatpak run org.mozilla.thunderbird -P     # profile manager: create "dev"
+flatpak run org.mozilla.thunderbird -P dev -no-remote
+```
+
+## Test
+
+```bash
+npm test        # runs scripts/check_imports.mjs first, then mocha (TZ pinned; see below)
+npm run check   # just the import/manifest reference check
+npm run lint    # webext-linter
+```
+
+`TZ` is pinned to `America/New_York` in the `test` script. Upstream's suite was
+timezone-dependent — it only passed in `Europe/Paris` — because
+`common/format_dates.js` shifts a local `Date` by `getTimezoneOffset()` and then
+calls `toISOString()`, so the trailing `Z` is local wall-clock rather than UTC.
+The two tests asserting that output are `it.skip`-ed with a comment; the bug and
+those tests both go away in Phase 1.
+
+## Status
+
+Phase 0 complete: forked, installs on current Thunderbird, reproducible build,
+green test baseline. Detection is still upstream's and **known to be wrong** —
+see `../PLAN.md` §1.

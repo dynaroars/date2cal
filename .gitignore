@@ -12,3 +12,5 @@ content_scripts/highlight_dates/bundle
 .lib-cdn-lookup-cache/
 .lib-mozilla-hash-db-cache/
 .experiments-cache/
+# Fork: build output, rebuilt by `npm install` via the prepare hook
+dependencies/

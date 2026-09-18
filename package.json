@@ -15,13 +15,21 @@
   },
   "type": "module",
   "scripts": {
+    "setup": "npm run bundle-dependencies && npm run bundle-content-script",
+    "prepare": "npm run setup",
     "dev": "./scripts/bundle_plugin_watch.sh",
     "lint": "./scripts/lint_thunderbird.sh",
-    "test": "mocha ./tests/*",
+    "test": "TZ=America/New_York mocha ./tests/*",
     "bundle-dependencies": "./scripts/bundle_dependencies.sh",
     "bundle-content-script": "./scripts/bundle_content_script.sh",
-    "bundle-plugin": "npm run bundle-dependencies && npm run bundle-content-script && ./scripts/zip_to_publish.sh",
-    "build": "npm run bundle-plugin"
+    "bundle-plugin": "npm run setup && ./scripts/zip_to_publish.sh",
+    "build": "npm run bundle-plugin",
+    "check": "node scripts/check_imports.mjs",
+    "pretest": "npm run check"
   },
-  "version": "1.0.0"
+  "version": "0.1.0",
+  "name": "detect-cal-event",
+  "description": "Thunderbird add-on: detect dates in email and create calendar events",
+  "license": "BSD-3-Clause",
+  "private": true
 }
