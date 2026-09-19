@@ -11,7 +11,6 @@ const dateOrderSelect = document.getElementById('date-order')
 const calendarSelect = document.getElementById('calendar-select')
 const durationInput = document.getElementById('default-duration')
 const businessHoursCheckbox = document.getElementById('business-hours-meridiem')
-const inlineHighlightCheckbox = document.getElementById('inline-highlight')
 const saveStatus = document.getElementById('save-status')
 
 let saveStatusTimer = null
@@ -54,7 +53,6 @@ async function init() {
     dateOrderSelect.value = settings.defaultDateOrder
     durationInput.value = settings.defaultDurationMinutes
     businessHoursCheckbox.checked = settings.businessHoursMeridiem
-    inlineHighlightCheckbox.checked = settings.inlineHighlightEnabled
     await populateCalendars(settings.defaultCalendarId)
 
     dateOrderSelect.addEventListener('change', () => save('defaultDateOrder', dateOrderSelect.value))
@@ -64,7 +62,6 @@ async function init() {
         if (Number.isInteger(minutes) && minutes > 0) save('defaultDurationMinutes', minutes)
     })
     businessHoursCheckbox.addEventListener('change', () => save('businessHoursMeridiem', businessHoursCheckbox.checked))
-    inlineHighlightCheckbox.addEventListener('change', () => save('inlineHighlightEnabled', inlineHighlightCheckbox.checked))
 }
 
 init()

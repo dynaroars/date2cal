@@ -9,7 +9,6 @@ export const SETTINGS_DEFAULTS = {
     defaultCalendarId: null,
     defaultDurationMinutes: 60,
     businessHoursMeridiem: true,
-    inlineHighlightEnabled: true,
 }
 
 export async function getSettings() {

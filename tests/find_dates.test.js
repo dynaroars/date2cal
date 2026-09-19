@@ -103,6 +103,19 @@ describe('detectEvents - prose (Layers 2-3)', () => {
         expect(c.recurrenceLabel).to.equal('weekly on Monday')
     })
 
+    it('splits a "Month D1, D2" list into separate dates instead of misreading the second number as a year', () => {
+        // Real bug: chrono read "Oct 14, 21" as one date, "October 14,
+        // 2021" (2-digit year), and across a line break it got worse --
+        // "Oct 14\n21\nNov 11, 18" collapsed into one garbled match. This is
+        // a common scheduling-email shorthand for two candidate days.
+        const body = 'Out of the Oct/Nov Wednesdays, I can only do:\n\n    Oct 14, 21\n    Nov 11, 18\n'
+        const {candidates} = detectEvents({subject: 'Availability', body, referenceDate: REF})
+        const dates = candidates.map(c => c.start.toDateString()).sort()
+        expect(dates).to.deep.equal([
+            'Wed Nov 11 2026', 'Wed Nov 18 2026', 'Wed Oct 14 2026', 'Wed Oct 21 2026',
+        ])
+    })
+
     it('appends an UNTIL clause when the recurrence names an end date', () => {
         const c = top('Standup', 'Daily standup starting tomorrow at 9am, daily until December 1.')
         expect(c.rrule).to.equal('FREQ=DAILY;UNTIL=20261201T170000Z')

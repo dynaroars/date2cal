@@ -8,6 +8,7 @@ import {stripQuotedAndNoise, filterNoise, dedupeOverlapping} from './filter_nois
 import {extractLocation, extractVideoLink, extractTitle} from './extract_details.js'
 import {detectRecurrence} from './recurrence.js'
 import {rankCandidates} from './rank.js'
+import {extractDateLists, maskSpans} from './date_list_parser.js'
 
 const DEFAULT_DURATION_MINUTES = 60 // see PLAN.md Phase 1 step 14.
 // (The upstream plugin rounded to the next half hour, producing odd
@@ -34,11 +35,24 @@ function sameDay(a, b) {
  * fully-formed candidates (title/location/url/recurrence attached). */
 function detectInText(text, source, subject, referenceDate, dateOrder, businessHoursMeridiem, defaultDurationMinutes) {
     const cleaned = stripQuotedAndNoise(text)
-    const rawMatches = parseProse(cleaned, referenceDate, dateOrder, businessHoursMeridiem)
-    const filtered = filterNoise(rawMatches, cleaned, referenceDate)
+
+    // "Month D1, D2[, ...]" lists ("Oct 14, 21") don't fit chrono's one-
+    // match-one-date model -- pull them out first and mask their spans so
+    // chrono doesn't separately (mis)parse the same digits (it reads a
+    // trailing 2-digit number as a year: "Oct 14, 21" -> Oct 14 2021).
+    // See common/date_list_parser.js. Deliberately NOT run through
+    // dedupeOverlapping against each other below: several of these results
+    // intentionally share the same source span (one "Oct 14, 21" mention
+    // produces two distinct dates), which dedupeOverlapping would otherwise
+    // collapse down to one.
+    const {matches: dateListMatches, spans} = extractDateLists(cleaned, referenceDate)
+    const maskedText = maskSpans(cleaned, spans)
+
+    const rawMatches = parseProse(maskedText, referenceDate, dateOrder, businessHoursMeridiem)
+    const filtered = filterNoise(rawMatches, maskedText, referenceDate)
     const deduped = dedupeOverlapping(filtered)
 
-    return deduped.map((match) => {
+    return [...dateListMatches, ...deduped].map((match) => {
         const {end, isAllDay} = applyDurationPolicy(match, defaultDurationMinutes)
         const recurrence = detectRecurrence(cleaned, match.index, match.text.length, referenceDate)
         return {

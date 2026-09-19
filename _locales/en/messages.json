@@ -24,7 +24,7 @@
         "description": "Shown in the toolbar popup when no message is currently displayed."
     },
     "noDatesFoundCreateBlank": {
-        "message": "No dates found — create a blank event",
+        "message": "No dates found \u2014 create a blank event",
         "description": "Fallback row in the toolbar popup when detection found nothing."
     },
     "optionsTitle": {
@@ -36,11 +36,11 @@
         "description": "Options page: label for the date-order setting."
     },
     "optionsDateOrderMdy": {
-        "message": "Month/Day/Year (US) — 5/7/2026 = May 7",
+        "message": "Month/Day/Year (US) \u2014 5/7/2026 = May 7",
         "description": "Options page: MDY dropdown choice."
     },
     "optionsDateOrderDmy": {
-        "message": "Day/Month/Year — 5/7/2026 = July 5",
+        "message": "Day/Month/Year \u2014 5/7/2026 = July 5",
         "description": "Options page: DMY dropdown choice."
     },
     "optionsCalendarLabel": {
@@ -62,10 +62,6 @@
     "optionsBusinessHoursLabel": {
         "message": "Assume a bare hour like \"at 4\" means 4 PM, not 4 AM",
         "description": "Options page: checkbox label for the business-hours-meridiem toggle."
-    },
-    "optionsInlineHighlightLabel": {
-        "message": "Highlight detected dates directly in the email",
-        "description": "Options page: checkbox label for the inline-highlighting toggle."
     },
     "optionsSaved": {
         "message": "Saved",
