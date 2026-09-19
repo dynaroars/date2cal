@@ -40,7 +40,7 @@ function detectInText(text, source, subject, referenceDate, dateOrder) {
 
     return deduped.map((match) => {
         const {end, isAllDay} = applyDurationPolicy(match)
-        const recurrence = detectRecurrence(cleaned, match.index, match.text.length)
+        const recurrence = detectRecurrence(cleaned, match.index, match.text.length, referenceDate)
         return {
             confidence: 'prose',
             source,

@@ -86,6 +86,12 @@ describe('detectEvents - prose (Layers 2-3)', () => {
         expect(c.rrule).to.equal('FREQ=WEEKLY;BYDAY=MO')
         expect(c.recurrenceLabel).to.equal('weekly on Monday')
     })
+
+    it('appends an UNTIL clause when the recurrence names an end date', () => {
+        const c = top('Standup', 'Daily standup starting tomorrow at 9am, daily until December 1.')
+        expect(c.rrule).to.equal('FREQ=DAILY;UNTIL=20261201T170000Z')
+        expect(c.recurrenceLabel).to.equal('daily until Tue Dec 01 2026')
+    })
 })
 
 describe('detectEvents - noise rejection (precision)', () => {
