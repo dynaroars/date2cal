@@ -110,6 +110,26 @@
         ]
       },
       {
+        "name": "createWithDialog",
+        "async": true,
+        "type": "function",
+        "description": "Opens Thunderbird's own New Event dialog, prefilled with createProperties, instead of writing the item directly. The user reviews/edits time, date, calendar, location, etc. and saves (or cancels) via the dialog itself -- see PLAN.md Phase 4.",
+        "parameters": [
+          { "type": "string", "name": "calendarId" },
+          {
+            "name": "createProperties",
+            "type": "object",
+            "properties": {
+              "id": { "type": "string", "optional": true },
+              "type": { "type": "string", "enum": ["event", "task"] },
+              "format": { "$ref": "CalendarItemFormats", "optional": true },
+              "item": { "$ref": "RawCalendarItem" },
+              "allDay": { "type": "boolean", "optional": true }
+            }
+          }
+        ]
+      },
+      {
         "name": "update",
         "async": true,
         "type": "function",

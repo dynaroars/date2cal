@@ -140,6 +140,36 @@ this.calendar_items = class extends ExtensionAPI {
             await toCalendar.addItem(item);
             await fromCalendar.deleteItem(item);
           },
+          // PLAN.md Phase 4: hand a detected event to Thunderbird's own New
+          // Event dialog instead of writing it silently, so the user sees
+          // and can change time/date/calendar/location/etc. before anything
+          // is saved. `createEventWithDialog` is the exact function
+          // Thunderbird's own "Create Event from message" feature
+          // (chrome/calendar/content/calendar-extract.js) calls -- a
+          // maintained, first-party code path, not a private internal we're
+          // the only caller of. It is defined as a plain (non-ESM) global,
+          // loaded via <script> into specific chrome windows
+          // (messenger.xhtml, messageWindow.xhtml, aboutMessage.xhtml), so
+          // it's reached via the most recent main window rather than an
+          // import. createProperties uses the same jCal shape as create()
+          // above.
+          async createWithDialog(calendarId, createProperties) {
+            const calendar = getResolvedCalendarById(context.extension, calendarId);
+            const item = propsToItem(createProperties);
+            item.calendar = calendar.superCalendar;
+
+            const win = Services.wm.getMostRecentWindow("mail:3pane");
+            if (!win || typeof win.createEventWithDialog !== "function") {
+              throw new ExtensionError(
+                "createEventWithDialog is not available on the main window " +
+                "(no 3-pane window open, or Thunderbird's calendar UI changed)."
+              );
+            }
+
+            const forceAllDay = createProperties.allDay === true;
+            win.createEventWithDialog(item.calendar, null, null, null, item, forceAllDay);
+          },
+
           async remove(calendarId, id) {
             const calendar = getResolvedCalendarById(context.extension, calendarId);
 

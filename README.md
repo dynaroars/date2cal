@@ -88,6 +88,16 @@ npm run lint    # webext-linter
 timezone-dependent — it only passed in `Europe/Paris` — because
 `common/format_dates.js` shifts a local `Date` by `getTimezoneOffset()` and then
 calls `toISOString()`, so the trailing `Z` is local wall-clock rather than UTC.
+(`format_dates.js` no longer exists; the new detection pipeline carries real
+`Date` objects throughout.)
+
+`npm run lint` reports one expected `[fail]`: `experiment-modified` on the
+`calendar` namespace. The linter keeps hashes of the audited
+`tb-web-ext-experiments` draft this experiment started from; since Phase 4
+adds a `createWithDialog` function not in that draft, the hash no longer
+matches and the linter correctly asks for manual review of the diff. This is
+inherent to writing custom Experiment code, not a defect — see PLAN.md
+section 4 ("Risks").
 The two tests asserting that output are `it.skip`-ed with a comment; the bug and
 those tests both go away in Phase 1.
 

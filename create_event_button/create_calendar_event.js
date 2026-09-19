@@ -1,3 +1,8 @@
+// PLAN.md Phase 4: hands the detected event to Thunderbird's own New Event
+// dialog (via calendar.items.createWithDialog, see
+// experiments/calendar/parent/ext-calendar-items.js) instead of writing it
+// directly. There is no "created item" to return here -- the dialog is
+// user-driven; the user may edit anything and either save or cancel it.
 const calendarItems = messenger.calendar.items
 
 function generateUID() {
@@ -7,48 +12,87 @@ function generateUID() {
     });
 }
 
-export async function createEvent(calendarId, eventStartDate, eventEndDate, eventSummary, eventComment, timezone, location, allDay = false) {
+// jCal RECUR value type is a structured object, not a bare string --
+// converts an RFC 5545 RRULE string ("FREQ=WEEKLY;BYDAY=MO") into that shape.
+const MULTI_VALUE_KEYS = new Set(['byday', 'bymonthday', 'bymonth', 'byyearday', 'byweekno', 'bysetpos'])
+const NUMERIC_KEYS = new Set(['interval', 'count'])
+
+function rruleStringToJCal(rrule) {
+    const recur = {}
+    for (const part of rrule.split(';')) {
+        const [rawKey, rawValue] = part.split('=')
+        if (!rawKey || rawValue === undefined) continue
+        const key = rawKey.toLowerCase()
+        if (MULTI_VALUE_KEYS.has(key)) {
+            recur[key] = rawValue.split(',')
+        } else if (NUMERIC_KEYS.has(key)) {
+            recur[key] = parseInt(rawValue, 10)
+        } else {
+            recur[key] = rawValue
+        }
+    }
+    return recur
+}
+
+function toDateComponents(date) {
+    // jCal date-time components: [year, month, day, hour, minute, second, isUtc]
+    return [
+        date.getUTCFullYear(), date.getUTCMonth() + 1, date.getUTCDate(),
+        date.getUTCHours(), date.getUTCMinutes(), date.getUTCSeconds(), true,
+    ]
+}
+
+function toDateOnlyComponents(date) {
+    return [date.getUTCFullYear(), date.getUTCMonth() + 1, date.getUTCDate()]
+}
+
+/**
+ * Opens Thunderbird's New Event dialog prefilled from a detected candidate.
+ *
+ * @param {object} event
+ * @param {string} event.calendarId
+ * @param {string} event.title
+ * @param {Date} event.start
+ * @param {Date} event.end
+ * @param {boolean} [event.isAllDay]
+ * @param {string} [event.location]
+ * @param {string} [event.description]
+ * @param {string} [event.url]
+ * @param {string} [event.rrule] - RFC 5545 RRULE string, e.g. "FREQ=WEEKLY;BYDAY=MO"
+ * @param {string} [event.timezone] - IANA zone; only meaningful when !isAllDay
+ */
+export async function createEvent({
+    calendarId, title, start, end, isAllDay = false,
+    location, description, url, rrule, timezone,
+}) {
     const uid = generateUID()
 
-    let startValue, endValue, valueType, tzParam
-    if (allDay) {
-        valueType = 'date'
-        tzParam = {}
-        startValue = eventStartDate.slice(0, 10)
-        const endDay = new Date(eventEndDate.slice(0, 10))
-        endDay.setUTCDate(endDay.getUTCDate() + 1)
-        endValue = endDay.toISOString().slice(0, 10)
-    } else {
-        valueType = 'date-time'
-        tzParam = timezone ? {tzid: timezone} : {}
-        startValue = eventStartDate
-        endValue = eventEndDate
-    }
+    const valueType = isAllDay ? 'date' : 'date-time'
+    const tzParam = (!isAllDay && timezone) ? {tzid: timezone} : {}
+    const startValue = isAllDay ? toDateOnlyComponents(start) : toDateComponents(start)
+    const endValue = isAllDay ? toDateOnlyComponents(end) : toDateComponents(end)
 
     const properties = [
         ['dtstart', tzParam, valueType, startValue],
         ['dtend', tzParam, valueType, endValue],
-        ['summary', {}, 'text', eventSummary],
-        ['description', {}, 'text', eventComment],
+        ['summary', {}, 'text', title || ''],
         ['uid', {}, 'text', uid],
     ]
-    if (location) {
-        properties.push(['location', {}, 'text', location])
-    }
+    if (description) properties.push(['description', {}, 'text', description])
+    if (location) properties.push(['location', {}, 'text', location])
+    if (url) properties.push(['url', {}, 'uri', url])
+    if (rrule) properties.push(['rrule', {}, 'recur', rruleStringToJCal(rrule)])
+
     try {
-        await calendarItems.create(calendarId, {
-            format: "jcal",
+        await calendarItems.createWithDialog(calendarId, {
+            format: 'jcal',
             type: 'event',
             id: uid,
-
-            item: [
-                'vevent',
-                properties,
-                []
-            ]
+            allDay: isAllDay,
+            item: ['vevent', properties, []],
         })
     } catch (e) {
         return {error: e}
     }
-    return {uid}
+    return {opened: true, uid}
 }
