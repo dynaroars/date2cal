@@ -77,9 +77,11 @@ async function injectIntoOpenMessageTabs() {
     }
 }
 
+console.log('[date2cal] background page starting, setting up inline highlighting...')
 try {
     await registerHighlightScript()
     await injectIntoOpenMessageTabs()
+    console.log('[date2cal] inline highlighting ready')
 } catch (e) {
     console.error('[date2cal] failed to set up inline date highlighting', e)
 }
