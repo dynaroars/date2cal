@@ -36,16 +36,47 @@ function rruleStringToJCal(rrule) {
     return recur
 }
 
-function toDateComponents(date) {
-    // jCal date-time components: [year, month, day, hour, minute, second, isUtc]
-    return [
-        date.getUTCFullYear(), date.getUTCMonth() + 1, date.getUTCDate(),
-        date.getUTCHours(), date.getUTCMinutes(), date.getUTCSeconds(), true,
-    ]
+// jCal DATE/DATE-TIME values are formatted strings, NOT arrays of numbers --
+// confirmed against Thunderbird's actual ICAL.js (Ical.sys.mjs
+// Time.fromDateTimeString/fromDateString): it slices fixed character
+// positions out of a string like "2015-01-02T03:04:05Z" (jCal's ISO-8601
+// extended form, per RFC 7265 -- distinct from classic iCal's compact
+// "20150102T030405Z" wire format). An earlier version of this file passed
+// [year, month, day, ...] arrays instead; ICAL.js's slice() calls on that
+// array produced empty strings, which its own strictParseInt() then
+// rejected with "Could not extract integer from \"\"" -- caught by
+// clicking a highlighted date in a real Thunderbird session, not by any
+// mocked test (the mock only checked internal consistency of this file's
+// own output, not the real consumer's actual parsing contract).
+function pad(n, len = 2) {
+    return String(n).padStart(len, '0')
 }
 
-function toDateOnlyComponents(date) {
-    return [date.getUTCFullYear(), date.getUTCMonth() + 1, date.getUTCDate()]
+/** UTC date-time string with trailing Z -- used whenever no explicit tzid
+ * parameter is set (the case for every caller today; timezone-aware zoned
+ * events are supported below but nothing currently supplies `timezone`). */
+function toUtcDateTimeString(date) {
+    return `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())}` +
+        `T${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())}:${pad(date.getUTCSeconds())}Z`
+}
+
+/** Wall-clock date-time string (no Z) for a specific IANA zone -- the TZID
+ * parameter itself declares the zone per RFC 5545/jCal, so the value must
+ * NOT also carry a Z suffix or UTC components. */
+function toZonedDateTimeString(date, timezone) {
+    const parts = new Intl.DateTimeFormat('en-US', {
+        timeZone: timezone, hourCycle: 'h23',
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', second: '2-digit',
+    }).formatToParts(date).reduce((acc, p) => { acc[p.type] = p.value; return acc }, {})
+    return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}:${parts.second}`
+}
+
+/** DATE values have no time-zone concept at all -- use the calendar day the
+ * candidate represents (local components, not UTC: an all-day match
+ * shouldn't shift to a different calendar day because of a UTC offset). */
+function toDateOnlyString(date) {
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
 }
 
 /** Resolves which calendar to prefill the dialog with: the one explicitly
@@ -87,8 +118,13 @@ export async function createEvent({
 
     const valueType = isAllDay ? 'date' : 'date-time'
     const tzParam = (!isAllDay && timezone) ? {tzid: timezone} : {}
-    const startValue = isAllDay ? toDateOnlyComponents(start) : toDateComponents(start)
-    const endValue = isAllDay ? toDateOnlyComponents(end) : toDateComponents(end)
+
+    const formatValue = (date) => {
+        if (isAllDay) return toDateOnlyString(date)
+        return timezone ? toZonedDateTimeString(date, timezone) : toUtcDateTimeString(date)
+    }
+    const startValue = formatValue(start)
+    const endValue = formatValue(end)
 
     const properties = [
         ['dtstart', tzParam, valueType, startValue],
