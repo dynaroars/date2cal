@@ -77,24 +77,6 @@
         ]
       }
     },
-    "calendar_provider": {
-      "schema": "experiments/calendar/schema/calendar-provider.json",
-      "parent": {
-        "scopes": [
-          "addon_parent"
-        ],
-        "script": "experiments/calendar/parent/ext-calendar-provider.js",
-        "events": [
-          "startup"
-        ],
-        "paths": [
-          [
-            "calendar",
-            "provider"
-          ]
-        ]
-      }
-    },
     "calendar_timezones": {
       "schema": "experiments/calendar/schema/calendar-timezones.json",
       "parent": {
@@ -118,40 +100,6 @@
           [
             "calendar",
             "timezones"
-          ]
-        ]
-      }
-    },
-    "calendarItemAction": {
-      "schema": "experiments/calendar/schema/calendarItemAction.json",
-      "parent": {
-        "scopes": [
-          "addon_parent"
-        ],
-        "script": "experiments/calendar/parent/ext-calendarItemAction.js",
-        "events": [
-          "startup"
-        ],
-        "paths": [
-          [
-            "calendarItemAction"
-          ]
-        ]
-      }
-    },
-    "calendarItemDetails": {
-      "schema": "experiments/calendar/schema/calendarItemDetails.json",
-      "parent": {
-        "scopes": [
-          "addon_parent"
-        ],
-        "script": "experiments/calendar/parent/ext-calendarItemDetails.js",
-        "events": [
-          "startup"
-        ],
-        "paths": [
-          [
-            "calendarItemDetails"
           ]
         ]
       }
