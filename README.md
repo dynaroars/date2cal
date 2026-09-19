@@ -1,12 +1,14 @@
-# Detect Calendar Event — Thunderbird add-on
+# Date2Cal — Thunderbird add-on
 
 Detects dates and times in an email and turns them into calendar events with one
 click, the way macOS Mail does.
 
 Fork of [LouisJULIEN/thunderbird_plugin_mail_to_event](https://github.com/LouisJULIEN/thunderbird_plugin_mail_to_event)
-(BSD-3-Clause) at `984800f`. The calendar Experiment API is upstream's, extended
-with one new function; the detection engine and UI were rewritten. See `../PLAN.md`
+(MPL-2.0) at `984800f`. The calendar Experiment API is upstream's, extended
+with one new function; the detection engine and UI were rewritten. See `PLAN.md`
 for the full rationale and phase-by-phase history.
+
+Licensed under MPL-2.0, same as upstream — see `LICENCE`.
 
 **English only** by design — no language auto-detection. Detection runs in three
 layers (structured `.ics`/JSON-LD data, then chrono-node prose parsing, then a
@@ -122,7 +124,7 @@ those tests both go away in Phase 1.
 
 ## Status
 
-All phases in `../PLAN.md` are implemented (0 through 6, including 3a). 80
+All phases in `PLAN.md` are implemented (0 through 6, including 3a). 80
 automated tests passing (unit tests plus a 31-case golden corpus tracking
 precision and recall separately, gated at ≥95% each). `npm run lint`: 0
 errors, 1 expected manual-review note (see Test section above).

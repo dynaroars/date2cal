@@ -10,7 +10,7 @@
   },
   "browser_specific_settings": {
     "gecko": {
-      "id": "detect-cal-event@roars.dev",
+      "id": "date2cal@roars.dev",
       "strict_min_version": "140.0",
       "strict_max_version": "165.*"
     }

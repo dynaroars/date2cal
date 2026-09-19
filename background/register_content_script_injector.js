@@ -49,7 +49,7 @@ async function injectIntoOpenMessageTabs() {
         } catch (e) {
             // One tab's message pane not being ready yet (or having already
             // navigated away) shouldn't stop the others from being tagged.
-            console.error(`[detect-cal-event] could not inject into tab ${messageTab.id}`, e)
+            console.error(`[date2cal] could not inject into tab ${messageTab.id}`, e)
         }
     }
 }
@@ -58,5 +58,5 @@ try {
     await registerHighlightScript()
     await injectIntoOpenMessageTabs()
 } catch (e) {
-    console.error('[detect-cal-event] failed to set up inline date highlighting', e)
+    console.error('[date2cal] failed to set up inline date highlighting', e)
 }

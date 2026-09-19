@@ -26,8 +26,8 @@
     "pretest": "npm run check"
   },
   "version": "0.1.0",
-  "name": "detect-cal-event",
+  "name": "date2cal",
   "description": "Thunderbird add-on: detect dates in email and create calendar events",
-  "license": "BSD-3-Clause",
+  "license": "MPL-2.0",
   "private": true
 }

@@ -45,7 +45,7 @@ async function highlightEmailDates() {
     } catch (e) {
         // Detection running against this specific message's DOM should
         // never take down the message view itself -- log and move on.
-        console.error('[detect-cal-event] highlighting failed', e)
+        console.error('[date2cal] highlighting failed', e)
     }
 }
 

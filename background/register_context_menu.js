@@ -9,7 +9,7 @@ import {createEvent} from "../create_event_button/create_calendar_event.js";
 import {getCurrentMessageContext} from "../create_event_button/current_mail_to_date.js";
 import {SETTINGS_DEFAULTS} from "../common/settings.js";
 
-const MENU_ID = 'detect-cal-event-from-selection'
+const MENU_ID = 'date2cal-from-selection'
 
 async function registerMenu() {
     try {
@@ -29,7 +29,7 @@ async function registerMenu() {
     })
 }
 
-registerMenu().catch(e => console.error('detect-cal-event: failed to register context menu', e))
+registerMenu().catch(e => console.error('date2cal: failed to register context menu', e))
 
 messenger.menus.onClicked.addListener(async (info) => {
     if (info.menuItemId !== MENU_ID) return

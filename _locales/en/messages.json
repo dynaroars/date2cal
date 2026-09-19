@@ -1,6 +1,6 @@
 {
     "extensionName": {
-        "message": "Detect Calendar Event",
+        "message": "Date2Cal",
         "description": "Add-on name shown in the Add-ons Manager."
     },
     "extensionDescription": {
@@ -28,7 +28,7 @@
         "description": "Fallback row in the toolbar popup when detection found nothing."
     },
     "optionsTitle": {
-        "message": "Detect Calendar Event",
+        "message": "Date2Cal",
         "description": "Heading on the options page."
     },
     "optionsDateOrderLabel": {
