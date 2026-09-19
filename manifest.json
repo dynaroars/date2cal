@@ -30,7 +30,8 @@
   "background": {
     "scripts": [
       "background/register_content_script_injector.js",
-      "background/register_message_listeners.js"
+      "background/register_message_listeners.js",
+      "background/register_context_menu.js"
     ],
     "type": "module"
   },
@@ -42,7 +43,8 @@
   "permissions": [
     "messagesRead",
     "scripting",
-    "storage"
+    "storage",
+    "menus"
   ],
   "experiment_apis": {
     "calendar_calendars": {

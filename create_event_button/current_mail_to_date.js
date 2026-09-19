@@ -73,40 +73,61 @@ async function extractIcsTexts(messageId) {
     return texts.filter(Boolean)
 }
 
-export async function getCurrentMailDates() {
-    let tabs = await messenger.tabs.query({active: true, currentWindow: true});
+/** Everything needed to run detectEvents() for the currently displayed
+ * message, EXCEPT the body/HTML text itself -- callers that already have
+ * their own view of the body (the highlight-dates content script has the
+ * real rendered DOM, which is a *better* source than re-fetching it here)
+ * supply that themselves; see content_scripts/highlight_dates/
+ * highlight_dates.js. The toolbar popup has no such DOM, so
+ * getCurrentMailDates() below extends this with body extraction too. */
+export async function getCurrentMessageContext() {
+    const tabs = await messenger.tabs.query({active: true, currentWindow: true});
     const currentTab = tabs[0];
-    const currentTabId = currentTab.id;
 
-    const messages = await messenger.messageDisplay.getDisplayedMessages(currentTabId);
+    const messages = await messenger.messageDisplay.getDisplayedMessages(currentTab.id);
     const message = messages.messages?.[0]
-
     if (!message) return null
 
-    const subject = message.subject || ''
     const messageId = message.id
-
     // referenceDate anchors relative expressions ("tomorrow", "next Monday")
     // -- must be when the mail was *sent*, not when it happens to be read
     // (see PLAN.md Phase 1 step 7). message.date is already a Date.
     const referenceDate = message.date instanceof Date ? message.date : new Date()
 
-    const [{plainText: body, html}, icsTexts] = await Promise.all([
-        extractBody(messageId),
+    const [icsTexts, {defaultDateOrder}] = await Promise.all([
         extractIcsTexts(messageId),
+        browser.storage.local.get('defaultDateOrder'),
     ])
-    const htmlDocument = parseHtmlDocument(html)
 
-    const {defaultDateOrder} = await browser.storage.local.get('defaultDateOrder')
-
-    const {candidates, usedLayer} = detectEvents({
-        subject,
-        body,
+    // Deliberately excludes the full `message` header object -- nothing
+    // downstream needs more than messageId, and this object crosses a
+    // runtime.sendMessage structured-clone boundary for the content-script
+    // caller (see getDetectionContext in background/
+    // register_message_listeners.js), so keep it to plainly-clonable values.
+    return {
+        messageId,
+        subject: message.subject || '',
         referenceDate,
         dateOrder: defaultDateOrder || 'MDY',
         icsTexts,
+    }
+}
+
+export async function getCurrentMailDates() {
+    const context = await getCurrentMessageContext()
+    if (!context) return null
+
+    const {plainText: body, html} = await extractBody(context.messageId)
+    const htmlDocument = parseHtmlDocument(html)
+
+    const {candidates, usedLayer} = detectEvents({
+        subject: context.subject,
+        body,
+        referenceDate: context.referenceDate,
+        dateOrder: context.dateOrder,
+        icsTexts: context.icsTexts,
         htmlDocument,
     })
 
-    return {candidates, usedLayer, subject, messageId, body, referenceDate}
+    return {candidates, usedLayer, subject: context.subject, messageId: context.messageId, body, referenceDate: context.referenceDate}
 }

@@ -46,11 +46,26 @@ function toDateOnlyComponents(date) {
     return [date.getUTCFullYear(), date.getUTCMonth() + 1, date.getUTCDate()]
 }
 
+/** Resolves which calendar to prefill the dialog with: the one explicitly
+ * requested, else the user's saved default, else the first available
+ * calendar. Shared by every caller (popup, background message listener,
+ * future context menu) so "what's the default calendar" has one answer. */
+async function resolveCalendarId(requestedCalendarId) {
+    if (requestedCalendarId) return requestedCalendarId
+
+    const {defaultCalendarId} = await browser.storage.local.get('defaultCalendarId')
+    if (defaultCalendarId) return defaultCalendarId
+
+    const calendars = await messenger.calendar.calendars.query({visible: true, readOnly: false, enabled: true})
+    return calendars[0]?.id
+}
+
 /**
  * Opens Thunderbird's New Event dialog prefilled from a detected candidate.
  *
  * @param {object} event
- * @param {string} event.calendarId
+ * @param {string} [event.calendarId] - defaults to the saved default calendar,
+ *   then the first available one, if omitted.
  * @param {string} event.title
  * @param {Date} event.start
  * @param {Date} event.end
@@ -62,9 +77,10 @@ function toDateOnlyComponents(date) {
  * @param {string} [event.timezone] - IANA zone; only meaningful when !isAllDay
  */
 export async function createEvent({
-    calendarId, title, start, end, isAllDay = false,
+    calendarId: requestedCalendarId, title, start, end, isAllDay = false,
     location, description, url, rrule, timezone,
 }) {
+    const calendarId = await resolveCalendarId(requestedCalendarId)
     const uid = generateUID()
 
     const valueType = isAllDay ? 'date' : 'date-time'

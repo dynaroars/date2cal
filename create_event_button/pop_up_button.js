@@ -1,133 +1,92 @@
-import {createEventFormTop, createEventFormBottom} from "../common/event_form.js";
+// PLAN.md Phase 3, step 16: toolbar-button popup. Slimmed down to a plain
+// ranked list of detected candidates -- no event-editing form here either
+// (see pop_up_button.css/highlight_dates.js comments); clicking a row opens
+// Thunderbird's own New Event dialog (Phase 4) already prefilled, where the
+// user reviews everything. This is also the fallback surface when inline
+// highlighting can't attach to a particular message's DOM.
 import {getCurrentMailDates} from "./current_mail_to_date.js";
-import {setupDateRangeSync} from "../common/date_range_sync.js";
+import {createEvent} from "./create_calendar_event.js";
 
-// Insert top fields (title, calendar, timezone) before the dates selector
-const {fragment: topFragment} = createEventFormTop()
-const datesSelector = document.getElementById('dates-selector')
-datesSelector.parentNode.insertBefore(topFragment, datesSelector)
-
-// Insert bottom fields (location, description) before the create button
-const {fragment: bottomFragment} = createEventFormBottom()
-const createBtn = document.getElementById('create-calendar-event')
-createBtn.parentNode.insertBefore(bottomFragment, createBtn)
-
-// Import interaction only after form fields are in the DOM
-await import("./pop_up_interaction.js")
-
-const showFoundDates = (dates) => {
-    const datesContainer = document.getElementById('dates-selector');
-    const endDateEl = document.getElementById('end-date-input')
-    dates.map((oneFoundDate) => {
-        let container = document.createElement("div",)
-        container.className = "one-date-selector"
-
-        const dateInput = document.createElement('input');
-
-        dateInput.className = "start-date-input"
-        dateInput.type = 'datetime-local';
-        dateInput.value = oneFoundDate.startDateTime.dateISO.slice(0, 16)
-        dateInput.endDate = oneFoundDate.endDateTime.dateISO.slice(0, 16)
-        dateInput._syncer = setupDateRangeSync(dateInput, endDateEl, dateInput.endDate)
-
-        let selectOneDateInput = document.createElement('input');
-        selectOneDateInput.type = "submit"
-        selectOneDateInput.value = "select"
-        selectOneDateInput.className = "submit-start-date"
-
-        container.append(dateInput)
-        container.append(selectOneDateInput)
-
-        datesContainer.appendChild(container);
-    })
-}
-
-const {dates, subject, messageId, detectedLanguage} = await getCurrentMailDates()
-document.getElementById("event-title").value = subject
-if (detectedLanguage) {
-    document.getElementById("detected-language").textContent = detectedLanguage
-}
-if (dates.length > 0) {
-    showFoundDates(dates)
-    if (dates.length === 1) {
-        document.querySelector('.submit-start-date').click()
-    }
-} else {
-    const now = new Date()
-    const offset = now.getTimezoneOffset() * 60000
-    const startDate = new Date(now - offset)
-    const endDate = new Date(now - offset + 30 * 60000)
-    showFoundDates([{
-        startDateTime: {dateISO: startDate.toISOString(), dateJS: startDate},
-        endDateTime: {dateISO: endDate.toISOString(), dateJS: endDate},
-    }])
-}
-
-const formContainer = document.querySelector('.pluginMailToEvent-event-creator')
-if (messageId) {
-    formContainer.dataset.messageId = messageId
-}
-
-const storageKey = messageId ? `emailFormData_${messageId}` : null
-
-const saveFormData = async () => {
-    if (!storageKey) return
-    const startDateInputs = Array.from(document.getElementsByClassName('start-date-input'))
-    const selectedInput = document.querySelector(".start-date-input[aria-selected='true']")
-    await browser.storage.session.set({
-        [storageKey]: {
-            title: document.getElementById('event-title')?.value,
-            location: document.getElementById('event-location')?.value,
-            comment: document.getElementById('event-comment')?.value,
-            startDates: startDateInputs.map(input => input.value),
-            selectedDateIndex: selectedInput ? startDateInputs.indexOf(selectedInput) : -1,
-            selectedEndDate: document.getElementById('end-date-input')?.value,
-            allDay: document.getElementById('all-day')?.checked,
-        }
-    })
-}
-
-// Restore saved values per email (session storage — lost when Thunderbird closes)
-if (storageKey) {
-    const saved = await browser.storage.session.get(storageKey)
-    const savedFormData = saved[storageKey]
-    if (savedFormData) {
-        if (savedFormData.title) document.getElementById('event-title').value = savedFormData.title
-        if (savedFormData.location) document.getElementById('event-location').value = savedFormData.location
-        if (savedFormData.comment) document.getElementById('event-comment').value = savedFormData.comment
-
-        const startDateInputs = Array.from(document.getElementsByClassName('start-date-input'))
-
-        if (savedFormData.startDates) {
-            savedFormData.startDates.forEach((date, i) => {
-                if (startDateInputs[i]) startDateInputs[i].value = date
-            })
-        }
-
-        if (savedFormData.selectedDateIndex >= 0) {
-            const selectedInput = startDateInputs[savedFormData.selectedDateIndex]
-            if (selectedInput) {
-                selectedInput.endDate = savedFormData.selectedEndDate
-                selectedInput.parentElement.querySelector('.submit-start-date').click()
-            }
-        }
-
-        if (savedFormData.selectedEndDate) {
-            document.getElementById('end-date-input').value = savedFormData.selectedEndDate
-        }
-
-        if (savedFormData.allDay) {
-            const allDayCheckbox = document.getElementById('all-day')
-            allDayCheckbox.checked = true
-            allDayCheckbox.dispatchEvent(new Event('change'))
-        }
-    }
-}
-
-formContainer.addEventListener('input', saveFormData)
-document.getElementById('all-day').addEventListener('change', saveFormData)
-
-// Save when a date row is selected — fires after pop_up_interaction.js's listener updates ariaSelected
-document.getElementById('dates-selector').addEventListener('click', (e) => {
-    if (e.target.className === 'submit-start-date') saveFormData()
+const TIME_FORMAT = new Intl.DateTimeFormat(undefined, {
+    weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit',
 })
+const DATE_ONLY_FORMAT = new Intl.DateTimeFormat(undefined, {weekday: 'short', month: 'short', day: 'numeric'})
+
+function formatWhen(candidate) {
+    return candidate.isAllDay ? DATE_ONLY_FORMAT.format(candidate.start) : TIME_FORMAT.format(candidate.start)
+}
+
+function candidateToEventPayload(candidate) {
+    return {
+        title: candidate.title,
+        start: candidate.start,
+        end: candidate.end,
+        isAllDay: candidate.isAllDay,
+        location: candidate.location,
+        description: candidate.description,
+        url: candidate.url,
+        rrule: candidate.rrule,
+    }
+}
+
+async function selectCandidate(candidate) {
+    await createEvent(candidateToEventPayload(candidate))
+    window.close()
+}
+
+function renderCandidateRow(candidate) {
+    const button = document.createElement('button')
+    button.type = 'button'
+    button.className = 'pluginMailToEvent-candidate'
+
+    const when = document.createElement('span')
+    when.className = 'pluginMailToEvent-candidate-when'
+    when.textContent = formatWhen(candidate) + (candidate.recurrenceLabel ? ` · ${candidate.recurrenceLabel}` : '')
+
+    const snippet = document.createElement('span')
+    snippet.className = 'pluginMailToEvent-candidate-snippet'
+    snippet.textContent = candidate.title || candidate.text
+
+    button.append(when, snippet)
+    button.addEventListener('click', () => selectCandidate(candidate))
+    return button
+}
+
+function renderEmptyState(subject, referenceDate) {
+    const button = document.createElement('button')
+    button.type = 'button'
+    button.className = 'pluginMailToEvent-candidate'
+    button.textContent = 'No dates found — create a blank event'
+    button.addEventListener('click', () => {
+        const start = new Date(referenceDate)
+        const end = new Date(start.getTime() + 60 * 60000)
+        selectCandidate({title: subject, start, end, isAllDay: false})
+    })
+    return button
+}
+
+async function render() {
+    const container = document.getElementById('candidate-list')
+    const result = await getCurrentMailDates()
+
+    if (!result) {
+        container.innerHTML = ''
+        container.appendChild(Object.assign(document.createElement('div'), {
+            className: 'pluginMailToEvent-empty',
+            textContent: 'No message is open.',
+        }))
+        return
+    }
+
+    const {candidates, subject, referenceDate} = result
+    container.innerHTML = ''
+    if (candidates.length === 0) {
+        container.appendChild(renderEmptyState(subject, referenceDate))
+        return
+    }
+    for (const candidate of candidates) {
+        container.appendChild(renderCandidateRow(candidate))
+    }
+}
+
+render()
