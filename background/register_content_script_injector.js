@@ -32,11 +32,14 @@ async function registerHighlightScript() {
             "content_scripts/highlight_dates/bundle/highlight_dates.bundle.js"
         ],
     }])
+    // TEMPORARY diagnostic logging -- see chat / highlight_dates.js.
+    console.log('[detect-cal-event] registerScripts() succeeded for future messages')
 }
 
 async function injectIntoOpenMessageTabs() {
     const openTabs = await messenger.tabs.query()
     const messageTabs = openTabs.filter(tab => ["mail", "messageDisplay"].includes(tab.type))
+    console.log(`[detect-cal-event] found ${messageTabs.length} already-open message tab(s) to inject into`)
 
     for (const messageTab of messageTabs) {
         try {
@@ -46,17 +49,19 @@ async function injectIntoOpenMessageTabs() {
                     "content_scripts/highlight_dates/bundle/highlight_dates.bundle.js"
                 ],
             })
+            console.log(`[detect-cal-event] executeScript succeeded for tab ${messageTab.id}`)
         } catch (e) {
             // One tab's message pane not being ready yet (or having already
             // navigated away) shouldn't stop the others from being tagged.
-            console.error(`detect-cal-event: could not inject into tab ${messageTab.id}`, e)
+            console.error(`[detect-cal-event] could not inject into tab ${messageTab.id}`, e)
         }
     }
 }
 
+console.log('[detect-cal-event] register_content_script_injector.js running')
 try {
     await registerHighlightScript()
     await injectIntoOpenMessageTabs()
 } catch (e) {
-    console.error('detect-cal-event: failed to set up inline date highlighting', e)
+    console.error('[detect-cal-event] failed to set up inline date highlighting', e)
 }
