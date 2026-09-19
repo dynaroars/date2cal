@@ -1,9 +1,7 @@
 {
   "dependencies": {
-    "@louis.jln/extract-date": "4.0.5",
-    "@louis.jln/extract-time": "4.0.0",
-    "esbuild": "0.28.1",
-    "franc": "^6.2.0"
+    "chrono-node": "^2.10.1",
+    "esbuild": "0.28.1"
   },
   "devDependencies": {
     "@types/thunderbird-webext-browser": "^127.0.0",
@@ -19,7 +17,7 @@
     "prepare": "npm run setup",
     "dev": "./scripts/bundle_plugin_watch.sh",
     "lint": "./scripts/lint_thunderbird.sh",
-    "test": "TZ=America/New_York mocha ./tests/*",
+    "test": "TZ=America/New_York mocha ./tests/*.test.js",
     "bundle-dependencies": "./scripts/bundle_dependencies.sh",
     "bundle-content-script": "./scripts/bundle_content_script.sh",
     "bundle-plugin": "npm run setup && ./scripts/zip_to_publish.sh",
