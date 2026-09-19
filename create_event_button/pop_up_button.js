@@ -52,14 +52,14 @@ function renderCandidateRow(candidate) {
     return button
 }
 
-function renderEmptyState(subject, referenceDate) {
+function renderEmptyState(subject, referenceDate, defaultDurationMinutes) {
     const button = document.createElement('button')
     button.type = 'button'
     button.className = 'pluginMailToEvent-candidate'
-    button.textContent = 'No dates found — create a blank event'
+    button.textContent = browser.i18n.getMessage('noDatesFoundCreateBlank')
     button.addEventListener('click', () => {
         const start = new Date(referenceDate)
-        const end = new Date(start.getTime() + 60 * 60000)
+        const end = new Date(start.getTime() + defaultDurationMinutes * 60000)
         selectCandidate({title: subject, start, end, isAllDay: false})
     })
     return button
@@ -73,15 +73,15 @@ async function render() {
         container.innerHTML = ''
         container.appendChild(Object.assign(document.createElement('div'), {
             className: 'pluginMailToEvent-empty',
-            textContent: 'No message is open.',
+            textContent: browser.i18n.getMessage('noMessageOpen'),
         }))
         return
     }
 
-    const {candidates, subject, referenceDate} = result
+    const {candidates, subject, referenceDate, settings} = result
     container.innerHTML = ''
     if (candidates.length === 0) {
-        container.appendChild(renderEmptyState(subject, referenceDate))
+        container.appendChild(renderEmptyState(subject, referenceDate, settings.defaultDurationMinutes))
         return
     }
     for (const candidate of candidates) {

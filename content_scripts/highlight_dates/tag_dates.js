@@ -16,22 +16,26 @@ const HIGHLIGHT_CLASS = 'pluginMailToEvent-highlightDate'
  *
  * @param {Document} doc
  * @param {Element} root - usually doc.body
- * @param {object} context - {subject, referenceDate, dateOrder, icsTexts}
+ * @param {object} context - {subject, referenceDate, icsTexts, settings}
  *   supplied by the caller (content scripts can't call messenger.* directly
- *   to fetch these themselves -- see highlight_dates.js).
+ *   to fetch these themselves -- see highlight_dates.js). `settings` is the
+ *   object returned by common/settings.js's getSettings().
  * @param {(candidate: object) => void} onSelect
  * @returns {{candidates: Array, usedLayer: string, highlighted: number}}
  */
 export function tagMailContentDates(doc, root, context, onSelect) {
     const {flatText, ranges} = buildFlatText(root, doc)
+    const settings = context.settings || {}
 
     const {candidates, usedLayer} = detectEvents({
         subject: context.subject || '',
         body: flatText,
         referenceDate: context.referenceDate,
-        dateOrder: context.dateOrder,
+        dateOrder: settings.defaultDateOrder,
         icsTexts: context.icsTexts,
         htmlDocument: doc, // the content script's own document -- JSON-LD scan for free
+        businessHoursMeridiem: settings.businessHoursMeridiem,
+        defaultDurationMinutes: settings.defaultDurationMinutes,
     })
 
     // Only highlight matches whose `index` is relative to *this* flat text.
@@ -55,7 +59,7 @@ export function tagMailContentDates(doc, root, context, onSelect) {
         const wrappers = wrapRange(ranges, candidate.index, candidate.index + candidate.text.length, () => {
             const span = doc.createElement('span')
             span.className = HIGHLIGHT_CLASS
-            span.title = 'Click to create a calendar event'
+            span.title = browser.i18n.getMessage('highlightTooltip')
             return span
         })
         if (wrappers.length === 0) continue

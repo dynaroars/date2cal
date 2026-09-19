@@ -4,10 +4,29 @@ Detects dates and times in an email and turns them into calendar events with one
 click, the way macOS Mail does.
 
 Fork of [LouisJULIEN/thunderbird_plugin_mail_to_event](https://github.com/LouisJULIEN/thunderbird_plugin_mail_to_event)
-(BSD-3-Clause) at `984800f`. The calendar Experiment APIs and UI shell are
-upstream's; the detection engine is being rewritten. See `../PLAN.md`.
+(BSD-3-Clause) at `984800f`. The calendar Experiment API is upstream's, extended
+with one new function; the detection engine and UI were rewritten. See `../PLAN.md`
+for the full rationale and phase-by-phase history.
 
-**English only** by design — no language auto-detection.
+**English only** by design — no language auto-detection. Detection runs in three
+layers (structured `.ics`/JSON-LD data, then chrono-node prose parsing, then a
+handful of custom rules for gaps in real phrasing) — see `PLAN.md` section 2.
+
+## Features
+
+- **Three ways to create an event**: click a highlighted date inline in the
+  message, use the calendar button in the message toolbar (a ranked list of
+  everything detected), or select any text and right-click → "Create event
+  from selection".
+- Every path opens **Thunderbird's own New Event dialog**, prefilled — you see
+  and can change the time, date, calendar, location, etc. before anything is
+  saved. Nothing is ever written silently.
+- Recognizes recurring events ("every Monday", "weekly", "daily until Dec 1")
+  and video-call links (Zoom/Teams/Meet/Webex).
+- **Options page** (Tools → Add-ons → this add-on → Preferences): default
+  calendar, default event length, date order (MDY/DMY) for numeric dates, a
+  toggle for whether a bare hour like "at 4" means 4 PM, and a toggle for
+  inline highlighting.
 
 ## Requirements
 
@@ -103,6 +122,15 @@ those tests both go away in Phase 1.
 
 ## Status
 
-Phase 0 complete: forked, installs on current Thunderbird, reproducible build,
-green test baseline. Detection is still upstream's and **known to be wrong** —
-see `../PLAN.md` §1.
+All phases in `../PLAN.md` are implemented (0 through 6, including 3a). 80
+automated tests passing (unit tests plus a 31-case golden corpus tracking
+precision and recall separately, gated at ≥95% each). `npm run lint`: 0
+errors, 1 expected manual-review note (see Test section above).
+
+**Not yet verified: an actual run inside Thunderbird.** Everything here has
+been checked by automated test (including DOM manipulation via jsdom and
+mocked `messenger`/`browser` APIs) and by reading Thunderbird 154's own
+packaged source to confirm the Experiment API calls are real, but nothing
+has opened the add-on in a running Thunderbird window yet. Load it as a
+temporary add-on (see above) and try it on a real message before trusting
+it with your calendar.

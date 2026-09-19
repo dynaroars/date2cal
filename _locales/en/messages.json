@@ -1,0 +1,74 @@
+{
+    "extensionName": {
+        "message": "Detect Calendar Event",
+        "description": "Add-on name shown in the Add-ons Manager."
+    },
+    "extensionDescription": {
+        "message": "Detects dates and times in email and creates calendar events from them, macOS Mail style.",
+        "description": "Add-on description shown in the Add-ons Manager."
+    },
+    "messageActionTitle": {
+        "message": "Create event from email",
+        "description": "Tooltip on the message-toolbar button."
+    },
+    "contextMenuCreateEvent": {
+        "message": "Create event from selection",
+        "description": "Right-click context menu item shown when text is selected in a message."
+    },
+    "highlightTooltip": {
+        "message": "Click to create a calendar event",
+        "description": "Title attribute on an inline-highlighted date in the message body."
+    },
+    "noMessageOpen": {
+        "message": "No message is open.",
+        "description": "Shown in the toolbar popup when no message is currently displayed."
+    },
+    "noDatesFoundCreateBlank": {
+        "message": "No dates found — create a blank event",
+        "description": "Fallback row in the toolbar popup when detection found nothing."
+    },
+    "optionsTitle": {
+        "message": "Detect Calendar Event",
+        "description": "Heading on the options page."
+    },
+    "optionsDateOrderLabel": {
+        "message": "Date order for numeric dates (e.g. 5/7/2026)",
+        "description": "Options page: label for the date-order setting."
+    },
+    "optionsDateOrderMdy": {
+        "message": "Month/Day/Year (US) — 5/7/2026 = May 7",
+        "description": "Options page: MDY dropdown choice."
+    },
+    "optionsDateOrderDmy": {
+        "message": "Day/Month/Year — 5/7/2026 = July 5",
+        "description": "Options page: DMY dropdown choice."
+    },
+    "optionsCalendarLabel": {
+        "message": "Default calendar",
+        "description": "Options page: label for the default-calendar setting."
+    },
+    "optionsCalendarHint": {
+        "message": "Preselected when opening the New Event dialog. You can still change it there.",
+        "description": "Options page: explanatory text under the calendar dropdown."
+    },
+    "optionsDurationLabel": {
+        "message": "Default event length (minutes)",
+        "description": "Options page: label for the default-duration setting."
+    },
+    "optionsDurationHint": {
+        "message": "Used when a detected time has no end time or duration stated.",
+        "description": "Options page: explanatory text under the duration field."
+    },
+    "optionsBusinessHoursLabel": {
+        "message": "Assume a bare hour like \"at 4\" means 4 PM, not 4 AM",
+        "description": "Options page: checkbox label for the business-hours-meridiem toggle."
+    },
+    "optionsInlineHighlightLabel": {
+        "message": "Highlight detected dates directly in the email",
+        "description": "Options page: checkbox label for the inline-highlighting toggle."
+    },
+    "optionsSaved": {
+        "message": "Saved",
+        "description": "Options page: transient confirmation after a setting is changed."
+    }
+}

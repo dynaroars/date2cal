@@ -56,6 +56,22 @@ describe('detectEvents - prose (Layers 2-3)', () => {
         expect(c.start.toISOString()).to.equal('2026-09-19T13:00:00.000Z') // 9am, not 9pm
     })
 
+    it('can disable the business-hours meridiem rule via options (Phase 6)', () => {
+        const {candidates} = detectEvents({
+            subject: 'Meeting reminder', body: 'Meeting on the 23rd at 4',
+            referenceDate: REF, businessHoursMeridiem: false,
+        })
+        expect(candidates[0].start.getUTCHours()).to.equal(8) // 4am EDT = 08:00 UTC, chrono's own default
+    })
+
+    it('honors a custom default duration from options (Phase 6)', () => {
+        const {candidates} = detectEvents({
+            subject: 'Standup', body: 'Standup tomorrow at 9am',
+            referenceDate: REF, defaultDurationMinutes: 30,
+        })
+        expect(candidates[0].end.toISOString()).to.equal('2026-09-19T13:30:00.000Z')
+    })
+
     it('resolves EOD to 17:00', () => {
         const c = top('Deadline', 'Please submit by EOD Thursday')
         expect(c.start.toISOString()).to.equal('2026-09-24T21:00:00.000Z')

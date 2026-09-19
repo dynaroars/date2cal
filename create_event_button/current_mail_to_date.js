@@ -1,4 +1,5 @@
 import {detectEvents} from "../common/find_dates.js";
+import {getSettings} from "../common/settings.js";
 
 /** Extracts the best available plain-text body, degrading gracefully instead
  * of throwing (PLAN.md Phase 2, step 13 -- upstream did
@@ -94,9 +95,9 @@ export async function getCurrentMessageContext() {
     // (see PLAN.md Phase 1 step 7). message.date is already a Date.
     const referenceDate = message.date instanceof Date ? message.date : new Date()
 
-    const [icsTexts, {defaultDateOrder}] = await Promise.all([
+    const [icsTexts, settings] = await Promise.all([
         extractIcsTexts(messageId),
-        browser.storage.local.get('defaultDateOrder'),
+        getSettings(),
     ])
 
     // Deliberately excludes the full `message` header object -- nothing
@@ -108,8 +109,8 @@ export async function getCurrentMessageContext() {
         messageId,
         subject: message.subject || '',
         referenceDate,
-        dateOrder: defaultDateOrder || 'MDY',
         icsTexts,
+        settings,
     }
 }
 
@@ -119,15 +120,18 @@ export async function getCurrentMailDates() {
 
     const {plainText: body, html} = await extractBody(context.messageId)
     const htmlDocument = parseHtmlDocument(html)
+    const {settings} = context
 
     const {candidates, usedLayer} = detectEvents({
         subject: context.subject,
         body,
         referenceDate: context.referenceDate,
-        dateOrder: context.dateOrder,
+        dateOrder: settings.defaultDateOrder,
         icsTexts: context.icsTexts,
         htmlDocument,
+        businessHoursMeridiem: settings.businessHoursMeridiem,
+        defaultDurationMinutes: settings.defaultDurationMinutes,
     })
 
-    return {candidates, usedLayer, subject: context.subject, messageId: context.messageId, body, referenceDate: context.referenceDate}
+    return {candidates, usedLayer, subject: context.subject, messageId: context.messageId, body, referenceDate: context.referenceDate, settings}
 }

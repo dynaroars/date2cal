@@ -168,11 +168,18 @@ export const REFINERS = [businessHoursMeridiem, durationCue, mergeDuplicateTimez
 export const PARSERS = [bareOrdinalDay, eodEowCob, spelledOutClock]
 
 /**
- * Applies all Layer-3 rules to a chrono instance (a clone of chrono.casual,
- * chrono.strict, etc.) and returns it.
+ * Applies Layer-3 rules to a chrono instance (a clone of chrono.casual,
+ * chrono.GB, etc.) and returns it.
+ *
+ * @param {object} chronoInstance
+ * @param {object} [options]
+ * @param {boolean} [options.businessHoursMeridiem] - default true. Options-
+ *   page toggle (PLAN.md Phase 6) -- some users may prefer chrono's own
+ *   default (bare 1-7 = AM) over the business-hours assumption.
  */
-export function applyChronoRules(chronoInstance) {
+export function applyChronoRules(chronoInstance, {businessHoursMeridiem: useBusinessHoursMeridiem = true} = {}) {
     for (const parser of PARSERS) chronoInstance.parsers.push(parser)
-    for (const refiner of REFINERS) chronoInstance.refiners.push(refiner)
+    const refiners = useBusinessHoursMeridiem ? REFINERS : REFINERS.filter(r => r !== businessHoursMeridiem)
+    for (const refiner of refiners) chronoInstance.refiners.push(refiner)
     return chronoInstance
 }

@@ -3,6 +3,8 @@
 // experiments/calendar/parent/ext-calendar-items.js) instead of writing it
 // directly. There is no "created item" to return here -- the dialog is
 // user-driven; the user may edit anything and either save or cancel it.
+import {getSettings} from "../common/settings.js";
+
 const calendarItems = messenger.calendar.items
 
 function generateUID() {
@@ -53,7 +55,7 @@ function toDateOnlyComponents(date) {
 async function resolveCalendarId(requestedCalendarId) {
     if (requestedCalendarId) return requestedCalendarId
 
-    const {defaultCalendarId} = await browser.storage.local.get('defaultCalendarId')
+    const {defaultCalendarId} = await getSettings()
     if (defaultCalendarId) return defaultCalendarId
 
     const calendars = await messenger.calendar.calendars.query({visible: true, readOnly: false, enabled: true})

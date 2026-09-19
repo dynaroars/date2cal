@@ -6,6 +6,7 @@
 // date opens Thunderbird's own New Event dialog directly (Phase 4) -- see
 // PLAN.md Phase 3 for why the earlier draggable custom-popup UI was dropped.
 import {tagMailContentDates} from "./tag_dates.js";
+import {getSettings} from "../../common/settings.js";
 import cssText from "../../create_event_button/pop_up_button.css";
 
 const style = document.createElement('style')
@@ -33,6 +34,12 @@ async function onCandidateSelected(candidate) {
 }
 
 async function highlightEmailDates() {
+    // browser.storage is a plain WebExtension API available in content
+    // scripts (given the "storage" permission) -- no message round-trip
+    // needed for this one setting.
+    const {inlineHighlightEnabled} = await getSettings()
+    if (!inlineHighlightEnabled) return
+
     let context
     try {
         context = await browser.runtime.sendMessage({action: 'getDetectionContext'})

@@ -4,16 +4,18 @@
 import {casual, GB} from '../dependencies/chrono-en.js'
 import {applyChronoRules} from './chrono_rules.js'
 
-let usInstance = null
-let gbInstance = null
+// Cached per (dateOrder, businessHoursMeridiem) combination -- constructing
+// a chrono instance and pushing rules onto it isn't free, and there are only
+// four possible combinations.
+const instanceCache = new Map()
 
-function getInstance(dateOrder) {
-    if (dateOrder === 'DMY') {
-        if (!gbInstance) gbInstance = applyChronoRules(GB.clone())
-        return gbInstance
+function getInstance(dateOrder, businessHoursMeridiem) {
+    const key = `${dateOrder}:${businessHoursMeridiem}`
+    if (!instanceCache.has(key)) {
+        const base = dateOrder === 'DMY' ? GB.clone() : casual.clone()
+        instanceCache.set(key, applyChronoRules(base, {businessHoursMeridiem}))
     }
-    if (!usInstance) usInstance = applyChronoRules(casual.clone())
-    return usInstance
+    return instanceCache.get(key)
 }
 
 /**
@@ -26,10 +28,11 @@ function getInstance(dateOrder) {
  *   was *sent*.
  * @param {'MDY'|'DMY'} [dateOrder] - default 'MDY' (US). Never inferred from
  *   text language -- set explicitly via options (see PLAN.md Phase 6).
+ * @param {boolean} [businessHoursMeridiem] - default true; see chrono_rules.js.
  * @returns {Array<{text, index, start: Date, end: Date|null, hasTime: boolean}>}
  */
-export function parseProse(text, referenceDate, dateOrder = 'MDY') {
-    const chrono = getInstance(dateOrder)
+export function parseProse(text, referenceDate, dateOrder = 'MDY', businessHoursMeridiem = true) {
+    const chrono = getInstance(dateOrder, businessHoursMeridiem)
     const results = chrono.parse(text, referenceDate, {forwardDate: true})
 
     return results.map((r) => ({

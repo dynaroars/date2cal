@@ -11,6 +11,16 @@ function makeDoc(bodyHtml) {
 const REF = new Date('2026-09-18T12:00:00-04:00')
 
 describe('tagMailContentDates', () => {
+    // tag_dates.js reads browser.i18n.getMessage() for the highlight
+    // tooltip (Phase 6 i18n). Reset before each test rather than once at
+    // module load: other test files also mutate the shared globalThis.browser
+    // inside their own it() callbacks, and mocha loads/runs all test files
+    // in the same process, so a module-load-time assignment here can be
+    // clobbered by test execution order.
+    beforeEach(() => {
+        globalThis.browser = {i18n: {getMessage: (key) => `[${key}]`}}
+    })
+
     it('highlights a date mention in the body and wires a click handler', () => {
         const doc = makeDoc('<p>Let\'s meet tomorrow at 3pm to discuss.</p>')
         const selected = []

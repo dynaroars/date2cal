@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Detect Calendar Event",
-  "short_name": "Detect Calendar Event",
-  "description": "Detects dates and times in email and creates calendar events from them, macOS Mail style.",
+  "name": "__MSG_extensionName__",
+  "short_name": "__MSG_extensionName__",
+  "description": "__MSG_extensionDescription__",
   "version": "0.1.0",
   "author": "ThanhVu Nguyen",
   "developer": {
@@ -17,7 +17,7 @@
   },
   "message_display_action": {
     "default_popup": "create_event_button/pop_up_button.html",
-    "default_title": "Create event from email",
+    "default_title": "__MSG_messageActionTitle__",
     "default_icon": "images/calendar-light.svg",
     "theme_icons": [
       {
@@ -156,5 +156,10 @@
         ]
       }
     }
-  }
+  },
+  "options_ui": {
+    "page": "options/options.html",
+    "open_in_tab": true
+  },
+  "default_locale": "en"
 }

@@ -9,21 +9,21 @@ import {extractLocation, extractVideoLink, extractTitle} from './extract_details
 import {detectRecurrence} from './recurrence.js'
 import {rankCandidates} from './rank.js'
 
-const DEFAULT_DURATION_MS = 60 * 60 * 1000 // 1 hour: see PLAN.md Phase 1 step 14.
+const DEFAULT_DURATION_MINUTES = 60 // see PLAN.md Phase 1 step 14.
 // (The upstream plugin rounded to the next half hour, producing odd
 // 09:00-09:30 events; macOS Mail's convention of a flat 1-hour default reads
-// better for real meetings.)
+// better for real meetings. Configurable via the options page, Phase 6.)
 
 /** Fills in an end time/date for a prose match that chrono/Layer-3 didn't
  * already resolve (e.g. a duration cue set it). No time at all -> all-day. */
-function applyDurationPolicy(match) {
+function applyDurationPolicy(match, defaultDurationMinutes) {
     if (match.end) return {end: match.end, isAllDay: !match.hasTime && sameDay(match.start, match.end)}
     if (!match.hasTime) {
         const end = new Date(match.start.getTime())
         end.setDate(end.getDate() + 1)
         return {end, isAllDay: true}
     }
-    return {end: new Date(match.start.getTime() + DEFAULT_DURATION_MS), isAllDay: false}
+    return {end: new Date(match.start.getTime() + defaultDurationMinutes * 60000), isAllDay: false}
 }
 
 function sameDay(a, b) {
@@ -32,14 +32,14 @@ function sameDay(a, b) {
 
 /** Runs Layers 2-3 over one piece of text (subject or body) and returns
  * fully-formed candidates (title/location/url/recurrence attached). */
-function detectInText(text, source, subject, referenceDate, dateOrder) {
+function detectInText(text, source, subject, referenceDate, dateOrder, businessHoursMeridiem, defaultDurationMinutes) {
     const cleaned = stripQuotedAndNoise(text)
-    const rawMatches = parseProse(cleaned, referenceDate, dateOrder)
+    const rawMatches = parseProse(cleaned, referenceDate, dateOrder, businessHoursMeridiem)
     const filtered = filterNoise(rawMatches, cleaned, referenceDate)
     const deduped = dedupeOverlapping(filtered)
 
     return deduped.map((match) => {
-        const {end, isAllDay} = applyDurationPolicy(match)
+        const {end, isAllDay} = applyDurationPolicy(match, defaultDurationMinutes)
         const recurrence = detectRecurrence(cleaned, match.index, match.text.length, referenceDate)
         return {
             confidence: 'prose',
@@ -78,6 +78,10 @@ function detectInText(text, source, subject, referenceDate, dateOrder) {
  *   parts on the message (Layer 1).
  * @param {Document} [input.htmlDocument] - message body as a DOM Document,
  *   for JSON-LD scanning (Layer 1). Omit if unavailable.
+ * @param {boolean} [input.businessHoursMeridiem] - default true; the Layer-3
+ *   rule defaulting a bare hour 1-7 to PM. Options-page toggle (Phase 6).
+ * @param {number} [input.defaultDurationMinutes] - default 60. Options-page
+ *   setting (Phase 6).
  * @returns {{candidates: Array, usedLayer: 'structured'|'prose'}}
  */
 export function detectEvents({
@@ -87,6 +91,8 @@ export function detectEvents({
     dateOrder = 'MDY',
     icsTexts = [],
     htmlDocument = null,
+    businessHoursMeridiem = true,
+    defaultDurationMinutes = DEFAULT_DURATION_MINUTES,
 } = {}) {
     const structured = extractStructured({icsTexts, htmlDocument})
     if (structured.length > 0) {
@@ -95,10 +101,10 @@ export function detectEvents({
     }
 
     const subjectCandidates = subject
-        ? detectInText(subject, 'subject', subject, referenceDate, dateOrder)
+        ? detectInText(subject, 'subject', subject, referenceDate, dateOrder, businessHoursMeridiem, defaultDurationMinutes)
         : []
     const bodyCandidates = body
-        ? detectInText(body, 'body', subject, referenceDate, dateOrder)
+        ? detectInText(body, 'body', subject, referenceDate, dateOrder, businessHoursMeridiem, defaultDurationMinutes)
         : []
 
     return {
