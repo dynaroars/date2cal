@@ -12,6 +12,18 @@ const ID_CONTEXT_BEFORE = /\b(invoice|order|tracking|reference|ref\.?|account|ac
 const QUANTITY_CONTEXT_AFTER = /^\s*(items?|units?|packages?|pcs\.?|pieces?|qty\.?|quantity|copies|tickets?|orders?|shipped|ordered|sold|remaining|in stock)\b/i
 const COPYRIGHT_CONTEXT = /[©(]c[)]|\bcopyright\b/i
 
+// A bare single relative-day word with no time and no other context
+// ("shipped today", "is now out for delivery") is too weak a signal to
+// justify surfacing an event -- it's overwhelmingly non-scheduling filler in
+// real mail. A genuine scheduling mention almost always adds a time
+// ("today at 3pm") or more context; those aren't caught by this rule since
+// chrono includes them in the matched text.
+const BARE_WEAK_WORDS = new Set(['now', 'today', 'tonight', 'tomorrow', 'yesterday'])
+// Similarly, "the year"/"the day"/"the week"/"the month" alone carries no
+// actual date -- chrono's casual mode occasionally matches these as vague
+// filler ("...biggest sale of the year").
+const VAGUE_PHRASE_RE = /^the\s+(year|day|week|month)$/i
+
 /** True if the text around `index` suggests the number is an identifier or
  * quantity, not a date -- checked within a short window so we don't false-
  * positive on an unrelated "version" earlier in a long email. */
@@ -49,6 +61,14 @@ export function stripQuotedAndNoise(text) {
  * the exemption was removed.) */
 export function filterNoise(candidates, text, referenceDate) {
     return candidates.filter((c) => {
+        // Bare single-word matches are inherently too weak regardless of
+        // whether chrono claims a certain time -- "now" resolves to the
+        // current instant down to the minute (hasTime: true) purely because
+        // "now" always means *this* moment, not because the mail said
+        // anything temporally specific.
+        const trimmedLower = c.text.trim().toLowerCase()
+        if (BARE_WEAK_WORDS.has(trimmedLower) || VAGUE_PHRASE_RE.test(trimmedLower)) return false
+
         if (hasNonDateContext(text, c.index, c.text.length)) return false
 
         const around = text.slice(Math.max(0, c.index - 30), c.index + c.text.length + 10)
