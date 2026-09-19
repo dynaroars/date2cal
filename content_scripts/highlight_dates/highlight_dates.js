@@ -30,10 +30,14 @@ function candidateToEventPayload(candidate) {
 }
 
 async function onCandidateSelected(candidate) {
-    await browser.runtime.sendMessage({
+    const result = await browser.runtime.sendMessage({
         action: 'createCalendarEvent',
         event: candidateToEventPayload(candidate),
     })
+    if (result?.error) {
+        console.error('[date2cal] createEvent failed', result.error)
+        window.alert(`Could not open the event dialog:\n${result.error?.message || result.error}`)
+    }
 }
 
 async function highlightEmailDates() {

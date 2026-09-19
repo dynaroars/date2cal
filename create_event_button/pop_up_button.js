@@ -30,7 +30,12 @@ function candidateToEventPayload(candidate) {
 }
 
 async function selectCandidate(candidate) {
-    await createEvent(candidateToEventPayload(candidate))
+    const result = await createEvent(candidateToEventPayload(candidate))
+    if (result?.error) {
+        console.error('[date2cal] createEvent failed', result.error)
+        window.alert(`Could not open the event dialog:\n${result.error?.message || result.error}`)
+        return
+    }
     window.close()
 }
 
