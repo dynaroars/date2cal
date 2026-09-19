@@ -15,7 +15,7 @@
 // any further changes to this file.)
 const CONTENT_SCRIPT_ID = "pluginMailToEvent-highlightDates"
 
-async function registerHighlightScript() {
+async function registerHighlightScriptOnce() {
     try {
         // Idempotent: drop any stale registration from a previous
         // background-page lifetime before re-registering, rather than
@@ -32,6 +32,29 @@ async function registerHighlightScript() {
             "content_scripts/highlight_dates/bundle/highlight_dates.bundle.js"
         ],
     }])
+}
+
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms))
+
+// On a cold Thunderbird launch, this background page can start running
+// before messenger.scripting is fully ready, and registerScripts() fails
+// silently (caught below, logged, nothing else) -- observed as "highlighting
+// doesn't work until the extension is disabled and re-enabled", which just
+// gives the background page a later, better-timed restart. Retrying with
+// backoff covers the same race without requiring that manual step.
+async function registerHighlightScript() {
+    const delaysMs = [0, 500, 2000]
+    let lastError
+    for (const delay of delaysMs) {
+        if (delay) await sleep(delay)
+        try {
+            await registerHighlightScriptOnce()
+            return
+        } catch (e) {
+            lastError = e
+        }
+    }
+    throw lastError
 }
 
 async function injectIntoOpenMessageTabs() {
