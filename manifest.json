@@ -11,8 +11,8 @@
   "browser_specific_settings": {
     "gecko": {
       "id": "date2cal@roars.dev",
-      "strict_min_version": "140.0",
-      "strict_max_version": "165.*"
+      "strict_min_version": "137.0",
+      "strict_max_version": "156.*"
     }
   },
   "message_display_action": {
@@ -36,9 +36,9 @@
     "type": "module"
   },
   "icons": {
-    "64": "images/icon-render.png",
-    "32": "images/icon-render.png",
-    "16": "images/icon-render.png"
+    "64": "images/icon-64.png",
+    "32": "images/icon-32.png",
+    "16": "images/icon-16.png"
   },
   "permissions": [
     "messagesRead",
@@ -77,6 +77,24 @@
         ]
       }
     },
+    "calendar_provider": {
+      "schema": "experiments/calendar/schema/calendar-provider.json",
+      "parent": {
+        "scopes": [
+          "addon_parent"
+        ],
+        "script": "experiments/calendar/parent/ext-calendar-provider.js",
+        "events": [
+          "startup"
+        ],
+        "paths": [
+          [
+            "calendar",
+            "provider"
+          ]
+        ]
+      }
+    },
     "calendar_timezones": {
       "schema": "experiments/calendar/schema/calendar-timezones.json",
       "parent": {
@@ -100,6 +118,40 @@
           [
             "calendar",
             "timezones"
+          ]
+        ]
+      }
+    },
+    "calendarItemAction": {
+      "schema": "experiments/calendar/schema/calendarItemAction.json",
+      "parent": {
+        "scopes": [
+          "addon_parent"
+        ],
+        "script": "experiments/calendar/parent/ext-calendarItemAction.js",
+        "events": [
+          "startup"
+        ],
+        "paths": [
+          [
+            "calendarItemAction"
+          ]
+        ]
+      }
+    },
+    "calendarItemDetails": {
+      "schema": "experiments/calendar/schema/calendarItemDetails.json",
+      "parent": {
+        "scopes": [
+          "addon_parent"
+        ],
+        "script": "experiments/calendar/parent/ext-calendarItemDetails.js",
+        "events": [
+          "startup"
+        ],
+        "paths": [
+          [
+            "calendarItemDetails"
           ]
         ]
       }

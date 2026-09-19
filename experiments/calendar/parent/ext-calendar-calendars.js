@@ -12,14 +12,6 @@ this.calendar_calendars = class extends ExtensionAPI {
     const uuid = context.extension.uuid;
     const root = `experiments-calendar-${uuid}`;
     const query = context.extension.manifest.version;
-    // Upstream set this up in calendar_provider's onStartup (removed here as
-    // unused); calendar_calendars and calendar_items are the only remaining
-    // consumers of the resource:// import below, so each registers the
-    // substitution itself. setSubstitution is idempotent for the same args.
-    Services.io
-      .getProtocolHandler("resource")
-      .QueryInterface(Ci.nsIResProtocolHandler)
-      .setSubstitution(root, context.extension.rootURI);
     const {
       createCalendarObserver,
       unwrapCalendar,

@@ -9,8 +9,6 @@ localizeDocument()
 
 const dateOrderSelect = document.getElementById('date-order')
 const calendarSelect = document.getElementById('calendar-select')
-const durationInput = document.getElementById('default-duration')
-const businessHoursCheckbox = document.getElementById('business-hours-meridiem')
 const saveStatus = document.getElementById('save-status')
 
 let saveStatusTimer = null
@@ -51,17 +49,11 @@ async function init() {
     const settings = await getSettings()
 
     dateOrderSelect.value = settings.defaultDateOrder
-    durationInput.value = settings.defaultDurationMinutes
-    businessHoursCheckbox.checked = settings.businessHoursMeridiem
     await populateCalendars(settings.defaultCalendarId)
 
     dateOrderSelect.addEventListener('change', () => save('defaultDateOrder', dateOrderSelect.value))
     calendarSelect.addEventListener('change', () => save('defaultCalendarId', calendarSelect.value))
-    durationInput.addEventListener('change', () => {
-        const minutes = parseInt(durationInput.value, 10)
-        if (Number.isInteger(minutes) && minutes > 0) save('defaultDurationMinutes', minutes)
-    })
-    businessHoursCheckbox.addEventListener('change', () => save('businessHoursMeridiem', businessHoursCheckbox.checked))
 }
 
 init()
+
