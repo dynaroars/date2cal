@@ -11,11 +11,25 @@ import {SETTINGS_DEFAULTS} from "../common/settings.js";
 
 const MENU_ID = 'detect-cal-event-from-selection'
 
-messenger.menus.create({
-    id: MENU_ID,
-    title: browser.i18n.getMessage('contextMenuCreateEvent'),
-    contexts: ['selection'],
-})
+async function registerMenu() {
+    try {
+        // Idempotent for the same reason as register_content_script_injector.js:
+        // this top-level code re-runs whenever the (non-persistent, MV3)
+        // background page respawns within a single Thunderbird session, and
+        // menu registrations persist across that respawn -- so a second
+        // create() with the same id throws.
+        await messenger.menus.remove(MENU_ID)
+    } catch {
+        // No existing menu item to remove -- expected on a fresh launch.
+    }
+    await messenger.menus.create({
+        id: MENU_ID,
+        title: browser.i18n.getMessage('contextMenuCreateEvent'),
+        contexts: ['selection'],
+    })
+}
+
+registerMenu().catch(e => console.error('detect-cal-event: failed to register context menu', e))
 
 messenger.menus.onClicked.addListener(async (info) => {
     if (info.menuItemId !== MENU_ID) return
