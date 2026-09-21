@@ -2,25 +2,54 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-var { ExtensionCommon: { ExtensionAPI, EventManager } } = ChromeUtils.importESModule("resource://gre/modules/ExtensionCommon.sys.mjs");
-var { ExtensionUtils: { ExtensionError } } = ChromeUtils.importESModule("resource://gre/modules/ExtensionUtils.sys.mjs");
-
+var { ExtensionCommon: { ExtensionAPI, EventManager } } = ChromeUtils.importESModule(
+  "resource://gre/modules/ExtensionCommon.sys.mjs"
+);
+var { ExtensionUtils: { ExtensionError } } = ChromeUtils.importESModule(
+  "resource://gre/modules/ExtensionUtils.sys.mjs"
+);
 var { cal } = ChromeUtils.importESModule("resource:///modules/calendar/calUtils.sys.mjs");
 
+function sharedModuleRoot(extension) {
+  return `experiments-calendar-${extension.uuid}`;
+}
+
+function sharedModuleUrl(extension) {
+  const root = sharedModuleRoot(extension);
+  const query = extension.manifest.version;
+  return `resource://${root}/experiments/calendar-bridge/utils.sys.mjs?${query}`;
+}
+
 this.calendar_calendars = class extends ExtensionAPI {
+  onStartup() {
+    // Own the resource://experiments-calendar-<uuid>/ substitution directly
+    // (rather than depending on a separate always-running experiment) so
+    // utils.sys.mjs can be imported below by both this experiment and
+    // items.js. Registering the same substitution twice is harmless.
+    Services.io
+      .getProtocolHandler("resource")
+      .QueryInterface(Ci.nsIResProtocolHandler)
+      .setSubstitution(sharedModuleRoot(this.extension), this.extension.rootURI);
+  }
+
+  onShutdown(isAppShutdown) {
+    if (isAppShutdown) {
+      return;
+    }
+    Services.io
+      .getProtocolHandler("resource")
+      .QueryInterface(Ci.nsIResProtocolHandler)
+      .setSubstitution(sharedModuleRoot(this.extension), null);
+  }
+
   getAPI(context) {
-    const uuid = context.extension.uuid;
-    const root = `experiments-calendar-${uuid}`;
-    const query = context.extension.manifest.version;
     const {
-      createCalendarObserver,
+      makeCalendarObserver,
       unwrapCalendar,
-      getResolvedCalendarById,
-      isOwnCalendar,
-      convertCalendar,
-    } = ChromeUtils.importESModule(
-      `resource://${root}/experiments/calendar/ext-calendar-utils.sys.mjs?${query}`
-    );
+      resolveCalendarById,
+      belongsToExtension,
+      serializeCalendar,
+    } = ChromeUtils.importESModule(sharedModuleUrl(context.extension));
 
     return {
       calendar: {
@@ -28,10 +57,10 @@ this.calendar_calendars = class extends ExtensionAPI {
           async query({ type, url, name, color, readOnly, enabled, visible }) {
             const calendars = cal.manager.getCalendars();
 
-            let pattern = null;
+            let urlPattern = null;
             if (url) {
               try {
-                pattern = new MatchPattern(url, { restrictSchemes: false });
+                urlPattern = new MatchPattern(url, { restrictSchemes: false });
               } catch {
                 throw new ExtensionError(`Invalid url pattern: ${url}`);
               }
@@ -39,50 +68,27 @@ this.calendar_calendars = class extends ExtensionAPI {
 
             return calendars
               .filter(calendar => {
-                let matches = true;
-
-                if (type && calendar.type != type) {
-                  matches = false;
-                }
-
-                if (url && !pattern.matches(calendar.uri)) {
-                  matches = false;
-                }
-
-                if (name && !new MatchGlob(name).matches(calendar.name)) {
-                  matches = false;
-                }
-
-                if (color && color != calendar.getProperty("color")) {
-                  // TODO need to normalize the color, including null to default color
-                  matches = false;
-                }
-
-                if (enabled != null && calendar.getProperty("disabled") == enabled) {
-                  matches = false;
-                }
-
-                if (visible != null & calendar.getProperty("calendar-main-in-composite") != visible) {
-                  matches = false;
-                }
-
-                if (readOnly != null && calendar.readOnly != readOnly) {
-                  matches = false;
-                }
-
-                return matches;
+                if (type && calendar.type != type) return false;
+                if (url && !urlPattern.matches(calendar.uri)) return false;
+                if (name && !new MatchGlob(name).matches(calendar.name)) return false;
+                if (color && color != calendar.getProperty("color")) return false;
+                if (enabled != null && calendar.getProperty("disabled") == enabled) return false;
+                if (visible != null && calendar.getProperty("calendar-main-in-composite") != visible) return false;
+                if (readOnly != null && calendar.readOnly != readOnly) return false;
+                return true;
               })
-              .map(calendar => convertCalendar(context.extension, calendar));
+              .map(calendar => serializeCalendar(context.extension, calendar));
           },
+
           async get(id) {
             if (id.endsWith("#cache")) {
-              const calendar = unwrapCalendar(cal.manager.getCalendarById(id.substring(0, id.length - 6)));
-              const own = calendar.offlineStorage && isOwnCalendar(calendar, context.extension);
-              return own ? convertCalendar(context.extension, calendar.offlineStorage) : null;
+              const owner = unwrapCalendar(cal.manager.getCalendarById(id.substring(0, id.length - 6)));
+              const isOwn = owner.offlineStorage && belongsToExtension(owner, context.extension);
+              return isOwn ? serializeCalendar(context.extension, owner.offlineStorage) : null;
             }
-            const calendar = cal.manager.getCalendarById(id);
-            return convertCalendar(context.extension, calendar);
+            return serializeCalendar(context.extension, cal.manager.getCalendarById(id));
           },
+
           async create(createProperties) {
             let calendar = cal.manager.createCalendar(
               createProperties.type,
@@ -93,63 +99,40 @@ this.calendar_calendars = class extends ExtensionAPI {
             }
 
             calendar.name = createProperties.name;
-
-            if (createProperties.color != null) {
-              calendar.setProperty("color", createProperties.color);
-            }
-            if (createProperties.readOnly != null) {
-              calendar.setProperty("readOnly", createProperties.readOnly);
-            }
-            if (createProperties.enabled != null) {
-              calendar.setProperty("disabled", !createProperties.enabled);
-            }
-            if (createProperties.visible != null) {
-              calendar.setProperty("calendar-main-in-composite", createProperties.visible);
-            }
-            if (createProperties.showReminders != null) {
-              calendar.setProperty("suppressAlarms", !createProperties.showReminders);
-            }
+            if (createProperties.color != null) calendar.setProperty("color", createProperties.color);
+            if (createProperties.readOnly != null) calendar.setProperty("readOnly", createProperties.readOnly);
+            if (createProperties.enabled != null) calendar.setProperty("disabled", !createProperties.enabled);
+            if (createProperties.visible != null) calendar.setProperty("calendar-main-in-composite", createProperties.visible);
+            if (createProperties.showReminders != null) calendar.setProperty("suppressAlarms", !createProperties.showReminders);
             if (createProperties.capabilities != null) {
-              if (!isOwnCalendar(calendar, context.extension)) {
+              if (!belongsToExtension(calendar, context.extension)) {
                 throw new ExtensionError("Cannot set capabilities on foreign calendar types");
               }
-
               calendar.setProperty("overrideCapabilities", JSON.stringify(createProperties.capabilities));
             }
 
             cal.manager.registerCalendar(calendar);
-
             calendar = cal.manager.getCalendarById(calendar.id);
-            return convertCalendar(context.extension, calendar);
+            return serializeCalendar(context.extension, calendar);
           },
+
           async update(id, updateProperties) {
             const calendar = cal.manager.getCalendarById(id);
             if (!calendar) {
               throw new ExtensionError(`Invalid calendar id: ${id}`);
             }
 
-            if (updateProperties.capabilities && !isOwnCalendar(calendar, context.extension)) {
+            if (updateProperties.capabilities && !belongsToExtension(calendar, context.extension)) {
               throw new ExtensionError("Cannot update capabilities for foreign calendars");
             }
-            if (updateProperties.url && !isOwnCalendar(calendar, context.extension)) {
+            if (updateProperties.url && !belongsToExtension(calendar, context.extension)) {
               throw new ExtensionError("Cannot update url for foreign calendars");
             }
 
-            if (updateProperties.url) {
-              calendar.uri = Services.io.newURI(updateProperties.url);
-            }
-
-            if (updateProperties.enabled != null) {
-              calendar.setProperty("disabled", !updateProperties.enabled);
-            }
-
-            if (updateProperties.visible != null) {
-              calendar.setProperty("calendar-main-in-composite", updateProperties.visible);
-            }
-
-            if (updateProperties.showReminders != null) {
-              calendar.setProperty("suppressAlarms", !updateProperties.showReminders);
-            }
+            if (updateProperties.url) calendar.uri = Services.io.newURI(updateProperties.url);
+            if (updateProperties.enabled != null) calendar.setProperty("disabled", !updateProperties.enabled);
+            if (updateProperties.visible != null) calendar.setProperty("calendar-main-in-composite", updateProperties.visible);
+            if (updateProperties.showReminders != null) calendar.setProperty("suppressAlarms", !updateProperties.showReminders);
 
             for (const prop of ["readOnly", "name", "color"]) {
               if (updateProperties[prop] != null) {
@@ -158,22 +141,18 @@ this.calendar_calendars = class extends ExtensionAPI {
             }
 
             if (updateProperties.capabilities) {
-              // TODO validate capability names
-              const unwrappedCalendar = calendar.wrappedJSObject.mUncachedCalendar.wrappedJSObject;
+              const unwrapped = calendar.wrappedJSObject.mUncachedCalendar.wrappedJSObject;
               let overrideCapabilities;
               try {
                 overrideCapabilities = JSON.parse(calendar.getProperty("overrideCapabilities")) || {};
-              } catch(e) {
+              } catch {
                 overrideCapabilities = {};
               }
               for (const [key, value] of Object.entries(updateProperties.capabilities)) {
-                if (value === null) {
-                  continue;
-                }
-                unwrappedCalendar.capabilities[key] = value;
+                if (value === null) continue;
+                unwrapped.capabilities[key] = value;
                 overrideCapabilities[key] = value;
               }
-
               calendar.setProperty("overrideCapabilities", JSON.stringify(overrideCapabilities));
             }
 
@@ -187,64 +166,57 @@ this.calendar_calendars = class extends ExtensionAPI {
               }
             }
           },
+
           async remove(id) {
             const calendar = cal.manager.getCalendarById(id);
             if (!calendar) {
               throw new ExtensionError(`Invalid calendar id: ${id}`);
             }
-
             cal.manager.unregisterCalendar(calendar);
           },
+
           async clear(id) {
             if (!id.endsWith("#cache")) {
               throw new ExtensionError("Cannot clear non-cached calendar");
             }
 
-            const offlineStorage = getResolvedCalendarById(context.extension, id);
+            const offlineStorage = resolveCalendarById(context.extension, id);
             const calendar = cal.manager.getCalendarById(id.substring(0, id.length - 6));
 
-            if (!isOwnCalendar(calendar, context.extension)) {
+            if (!belongsToExtension(calendar, context.extension)) {
               throw new ExtensionError("Cannot clear foreign calendar");
             }
 
             await new Promise((resolve, reject) => {
-              const listener = {
-                onDeleteCalendar(aCalendar, aStatus, aDetail) {
-                  if (Components.isSuccessCode(aStatus)) {
+              offlineStorage.QueryInterface(Ci.calICalendarProvider).deleteCalendar(offlineStorage, {
+                onDeleteCalendar(_calendar, status, detail) {
+                  if (Components.isSuccessCode(status)) {
                     resolve();
                   } else {
-                    reject(aDetail);
+                    reject(detail);
                   }
                 },
-              };
-              offlineStorage
-                .QueryInterface(Ci.calICalendarProvider)
-                .deleteCalendar(offlineStorage, listener);
+              });
             });
 
             calendar.wrappedJSObject.mObservers.notify("onLoad", [calendar]);
           },
 
           synchronize(ids) {
-            const calendars = [];
+            let calendars;
             if (ids) {
-              if (!Array.isArray(ids)) {
-                ids = [ids];
-              }
-              for (const id of ids) {
+              const idList = Array.isArray(ids) ? ids : [ids];
+              calendars = idList.map(id => {
                 const calendar = cal.manager.getCalendarById(id);
                 if (!calendar) {
                   throw new ExtensionError(`Invalid calendar id: ${id}`);
                 }
-                calendars.push(calendar);
-              }
+                return calendar;
+              });
             } else {
-              for (const calendar of cal.manager.getCalendars()) {
-                if (calendar.getProperty("calendar-main-in-composite")) {
-                  calendars.push(calendar);
-                }
-              }
+              calendars = cal.manager.getCalendars().filter(c => c.getProperty("calendar-main-in-composite"));
             }
+
             for (const calendar of calendars) {
               if (!calendar.getProperty("disabled") && calendar.canRefresh) {
                 calendar.refresh();
@@ -259,16 +231,13 @@ this.calendar_calendars = class extends ExtensionAPI {
               const observer = {
                 QueryInterface: ChromeUtils.generateQI(["calICalendarManagerObserver"]),
                 onCalendarRegistered(calendar) {
-                  fire.sync(convertCalendar(context.extension, calendar));
+                  fire.sync(serializeCalendar(context.extension, calendar));
                 },
                 onCalendarUnregistering() {},
                 onCalendarDeleting() {},
               };
-
               cal.manager.addObserver(observer);
-              return () => {
-                cal.manager.removeObserver(observer);
-              };
+              return () => cal.manager.removeObserver(observer);
             },
           }).api(),
 
@@ -276,35 +245,32 @@ this.calendar_calendars = class extends ExtensionAPI {
             context,
             name: "calendar.calendars.onUpdated",
             register: fire => {
-              const observer = createCalendarObserver({
-                onPropertyChanged(calendar, name, value, _oldValue) {
-                  const converted = convertCalendar(context.extension, calendar);
+              const observer = makeCalendarObserver({
+                onPropertyChanged(calendar, name, value) {
+                  const serialized = serializeCalendar(context.extension, calendar);
                   switch (name) {
                     case "name":
                     case "color":
                     case "readOnly":
-                      fire.sync(converted, { [name]: value });
+                      fire.sync(serialized, { [name]: value });
                       break;
                     case "uri":
-                      fire.sync(converted, { url: value?.spec });
+                      fire.sync(serialized, { url: value?.spec });
                       break;
                     case "suppressAlarms":
-                      fire.sync(converted, { showReminders: !value });
+                      fire.sync(serialized, { showReminders: !value });
                       break;
                     case "calendar-main-in-composite":
-                      fire.sync(converted, { visible: value });
+                      fire.sync(serialized, { visible: value });
                       break;
                     case "disabled":
-                      fire.sync(converted, { enabled: !value });
+                      fire.sync(serialized, { enabled: !value });
                       break;
                   }
                 },
               });
-
               cal.manager.addCalendarObserver(observer);
-              return () => {
-                cal.manager.removeCalendarObserver(observer);
-              };
+              return () => cal.manager.removeCalendarObserver(observer);
             },
           }).api(),
 
@@ -320,11 +286,8 @@ this.calendar_calendars = class extends ExtensionAPI {
                 },
                 onCalendarDeleting() {},
               };
-
               cal.manager.addObserver(observer);
-              return () => {
-                cal.manager.removeObserver(observer);
-              };
+              return () => cal.manager.removeObserver(observer);
             },
           }).api(),
         },

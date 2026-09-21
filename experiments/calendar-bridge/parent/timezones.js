@@ -2,8 +2,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-var { ExtensionCommon: { ExtensionAPI, EventManager } } = ChromeUtils.importESModule("resource://gre/modules/ExtensionCommon.sys.mjs");
-
+var { ExtensionCommon: { ExtensionAPI, EventManager } } = ChromeUtils.importESModule(
+  "resource://gre/modules/ExtensionCommon.sys.mjs"
+);
 var { cal } = ChromeUtils.importESModule("resource:///modules/calendar/calUtils.sys.mjs");
 
 this.calendar_timezones = class extends ExtensionAPI {
@@ -16,19 +17,18 @@ this.calendar_timezones = class extends ExtensionAPI {
             name: "calendar.timezones.onUpdated",
             register: fire => {
               cal.timezoneService.wrappedJSObject._updateDefaultTimezone();
-              let lastValue = cal.timezoneService.defaultTimezone?.tzid;
+              let lastZone = cal.timezoneService.defaultTimezone?.tzid;
 
               const observer = {
                 QueryInterface: ChromeUtils.generateQI(["nsIObserver"]),
-                observe(_subject, _topic, _data) {
-                  // Make sure the default timezone is updated before firing
+                observe() {
                   cal.timezoneService.wrappedJSObject._updateDefaultTimezone();
-                  const currentValue = cal.timezoneService.defaultTimezone?.tzid;
-                  if (currentValue != lastValue) {
-                    lastValue = currentValue;
-                    fire.sync(currentValue);
+                  const zone = cal.timezoneService.defaultTimezone?.tzid;
+                  if (zone != lastZone) {
+                    lastZone = zone;
+                    fire.sync(zone);
                   }
-                }
+                },
               };
 
               Services.prefs.addObserver("calendar.timezone.useSystemTimezone", observer);
@@ -41,8 +41,8 @@ this.calendar_timezones = class extends ExtensionAPI {
               };
             },
           }).api(),
-        }
-      }
+        },
+      },
     };
   }
 };

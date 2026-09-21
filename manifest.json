@@ -48,12 +48,15 @@
   ],
   "experiment_apis": {
     "calendar_calendars": {
-      "schema": "experiments/calendar/schema/calendar-calendars.json",
+      "schema": "experiments/calendar-bridge/schema/calendars.json",
       "parent": {
         "scopes": [
           "addon_parent"
         ],
-        "script": "experiments/calendar/parent/ext-calendar-calendars.js",
+        "script": "experiments/calendar-bridge/parent/calendars.js",
+        "events": [
+          "startup"
+        ],
         "paths": [
           [
             "calendar",
@@ -63,12 +66,15 @@
       }
     },
     "calendar_items": {
-      "schema": "experiments/calendar/schema/calendar-items.json",
+      "schema": "experiments/calendar-bridge/schema/items.json",
       "parent": {
         "scopes": [
           "addon_parent"
         ],
-        "script": "experiments/calendar/parent/ext-calendar-items.js",
+        "script": "experiments/calendar-bridge/parent/items.js",
+        "events": [
+          "startup"
+        ],
         "paths": [
           [
             "calendar",
@@ -77,31 +83,13 @@
         ]
       }
     },
-    "calendar_provider": {
-      "schema": "experiments/calendar/schema/calendar-provider.json",
-      "parent": {
-        "scopes": [
-          "addon_parent"
-        ],
-        "script": "experiments/calendar/parent/ext-calendar-provider.js",
-        "events": [
-          "startup"
-        ],
-        "paths": [
-          [
-            "calendar",
-            "provider"
-          ]
-        ]
-      }
-    },
     "calendar_timezones": {
-      "schema": "experiments/calendar/schema/calendar-timezones.json",
+      "schema": "experiments/calendar-bridge/schema/timezones.json",
       "parent": {
         "scopes": [
           "addon_parent"
         ],
-        "script": "experiments/calendar/parent/ext-calendar-timezones.js",
+        "script": "experiments/calendar-bridge/parent/timezones.js",
         "paths": [
           [
             "calendar",
@@ -113,45 +101,11 @@
         "scopes": [
           "addon_child"
         ],
-        "script": "experiments/calendar/child/ext-calendar-timezones.js",
+        "script": "experiments/calendar-bridge/child/timezones.js",
         "paths": [
           [
             "calendar",
             "timezones"
-          ]
-        ]
-      }
-    },
-    "calendarItemAction": {
-      "schema": "experiments/calendar/schema/calendarItemAction.json",
-      "parent": {
-        "scopes": [
-          "addon_parent"
-        ],
-        "script": "experiments/calendar/parent/ext-calendarItemAction.js",
-        "events": [
-          "startup"
-        ],
-        "paths": [
-          [
-            "calendarItemAction"
-          ]
-        ]
-      }
-    },
-    "calendarItemDetails": {
-      "schema": "experiments/calendar/schema/calendarItemDetails.json",
-      "parent": {
-        "scopes": [
-          "addon_parent"
-        ],
-        "script": "experiments/calendar/parent/ext-calendarItemDetails.js",
-        "events": [
-          "startup"
-        ],
-        "paths": [
-          [
-            "calendarItemDetails"
           ]
         ]
       }
