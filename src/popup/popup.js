@@ -1,22 +1,21 @@
-// PLAN.md Phase 3, step 16: toolbar-button popup. Slimmed down to a plain
-// ranked list of detected candidates -- no event-editing form here either
-// (see pop_up_button.css/highlight_dates.js comments); clicking a row opens
-// Thunderbird's own New Event dialog (Phase 4) already prefilled, where the
+// Toolbar-button popup: a plain ranked list of detected candidates. No
+// event-editing form here (see popup.css/highlight.js comments); clicking a
+// row opens Thunderbird's own New Event dialog already prefilled, where the
 // user reviews everything. This is also the fallback surface when inline
 // highlighting can't attach to a particular message's DOM.
-import {getCurrentMailDates} from "./current_mail_to_date.js";
-import {createEvent} from "./create_calendar_event.js";
+import {getCurrentMailDates} from "./mail-context.js";
+import {createEvent} from "./create-event.js";
 
-const TIME_FORMAT = new Intl.DateTimeFormat(undefined, {
+const WHEN_WITH_TIME_FORMAT = new Intl.DateTimeFormat(undefined, {
     weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit',
 })
-const DATE_ONLY_FORMAT = new Intl.DateTimeFormat(undefined, {weekday: 'short', month: 'short', day: 'numeric'})
+const WHEN_DATE_ONLY_FORMAT = new Intl.DateTimeFormat(undefined, {weekday: 'short', month: 'short', day: 'numeric'})
 
 function formatWhen(candidate) {
-    return candidate.isAllDay ? DATE_ONLY_FORMAT.format(candidate.start) : TIME_FORMAT.format(candidate.start)
+    return candidate.isAllDay ? WHEN_DATE_ONLY_FORMAT.format(candidate.start) : WHEN_WITH_TIME_FORMAT.format(candidate.start)
 }
 
-function candidateToEventPayload(candidate) {
+function toEventPayload(candidate) {
     return {
         title: candidate.title,
         start: candidate.start,
@@ -30,7 +29,7 @@ function candidateToEventPayload(candidate) {
 }
 
 async function selectCandidate(candidate) {
-    const result = await createEvent(candidateToEventPayload(candidate))
+    const result = await createEvent(toEventPayload(candidate))
     if (result?.error) {
         console.error('[date2cal] createEvent failed', result.error)
         window.alert(`Could not open the event dialog:\n${result.error?.message || result.error}`)

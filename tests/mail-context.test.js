@@ -41,7 +41,7 @@ function installMessengerMocks({
 // but re-importing avoids any accidental cross-test state in its own module
 // scope.
 async function loadModule() {
-    const mod = await import(`../create_event_button/current_mail_to_date.js?t=${Date.now()}-${Math.random()}`)
+    const mod = await import(`../src/popup/mail-context.js?t=${Date.now()}-${Math.random()}`)
     return mod
 }
 

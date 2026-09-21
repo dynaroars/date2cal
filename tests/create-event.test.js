@@ -14,7 +14,7 @@ globalThis.messenger = {
     },
 }
 
-const {createEvent} = await import('../create_event_button/create_calendar_event.js')
+const {createEvent} = await import('../src/popup/create-event.js')
 
 function propOf(jcalProperties, name) {
     return jcalProperties.find(p => p[0] === name)

@@ -1,6 +1,6 @@
 import {expect} from "chai";
 import {JSDOM} from "jsdom";
-import {tagMailContentDates} from "../content_scripts/highlight_dates/tag_dates.js";
+import {tagMailContentDates} from "../src/content/highlight/tag-dates.js";
 
 function makeDoc(bodyHtml) {
     const dom = new JSDOM(`<html><body>${bodyHtml}</body></html>`)

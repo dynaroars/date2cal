@@ -1,12 +1,10 @@
-import {detectEvents} from "../common/find_dates.js";
-import {getSettings} from "../common/settings.js";
+import {detectEvents} from "../detect/index.js";
+import {getSettings} from "../settings.js";
 
 /** Extracts the best available plain-text body, degrading gracefully instead
- * of throwing (PLAN.md Phase 2, step 13 -- upstream did
- * `emailBodyTextInline[0].content` with no guard, so a message with no
- * inline text part killed the whole popup with no visible error). Also
- * returns the raw HTML part (if any) so the caller can scan it for
- * schema.org JSON-LD markup -- Layer 1's second structured source. */
+ * of throwing when a message has no inline text part. Also returns the raw
+ * HTML part (if any) so the caller can scan it for schema.org JSON-LD
+ * markup -- the structured layer's second source. */
 async function extractBody(messageId) {
     let inlineParts = []
     try {
@@ -33,10 +31,10 @@ async function extractBody(messageId) {
     return {plainText: '', html: null}
 }
 
-/** Parses an HTML string into a Document for JSON-LD scanning.
- * DOMParser is a standard Window API available in extension page contexts
- * (background/popup pages), not just content scripts, so this works without
- * injecting anything into the message itself. */
+/** Parses an HTML string into a Document for JSON-LD scanning. DOMParser is
+ * a standard Window API available in extension page contexts (background/
+ * popup pages), not just content scripts, so this works without injecting
+ * anything into the message itself. */
 function parseHtmlDocument(html) {
     if (!html || typeof DOMParser === 'undefined') return null
     try {
@@ -46,8 +44,8 @@ function parseHtmlDocument(html) {
     }
 }
 
-/** Reads any text/calendar (.ics) attachments on the message -- Layer 1 of
- * detection (PLAN.md section 2). Best-effort: a message with no calendar
+/** Reads any text/calendar (.ics) attachments on the message -- the
+ * structured detection layer. Best-effort: a message with no calendar
  * attachment, or one Thunderbird can't fetch for some reason, just falls
  * through to prose detection. */
 async function extractIcsTexts(messageId) {
@@ -76,11 +74,11 @@ async function extractIcsTexts(messageId) {
 
 /** Everything needed to run detectEvents() for the currently displayed
  * message, EXCEPT the body/HTML text itself -- callers that already have
- * their own view of the body (the highlight-dates content script has the
- * real rendered DOM, which is a *better* source than re-fetching it here)
- * supply that themselves; see content_scripts/highlight_dates/
- * highlight_dates.js. The toolbar popup has no such DOM, so
- * getCurrentMailDates() below extends this with body extraction too. */
+ * their own view of the body (the highlight content script has the real
+ * rendered DOM, which is a *better* source than re-fetching it here) supply
+ * that themselves; see src/content/highlight/highlight.js. The toolbar
+ * popup has no such DOM, so getCurrentMailDates() below extends this with
+ * body extraction too. */
 export async function getCurrentMessageContext() {
     const tabs = await messenger.tabs.query({active: true, currentWindow: true});
     const currentTab = tabs[0];
@@ -91,8 +89,8 @@ export async function getCurrentMessageContext() {
 
     const messageId = message.id
     // referenceDate anchors relative expressions ("tomorrow", "next Monday")
-    // -- must be when the mail was *sent*, not when it happens to be read
-    // (see PLAN.md Phase 1 step 7). message.date is already a Date.
+    // -- must be when the mail was *sent*, not when it happens to be read.
+    // message.date is already a Date.
     const referenceDate = message.date instanceof Date ? message.date : new Date()
 
     const [icsTexts, settings] = await Promise.all([
@@ -103,8 +101,8 @@ export async function getCurrentMessageContext() {
     // Deliberately excludes the full `message` header object -- nothing
     // downstream needs more than messageId, and this object crosses a
     // runtime.sendMessage structured-clone boundary for the content-script
-    // caller (see getDetectionContext in background/
-    // register_message_listeners.js), so keep it to plainly-clonable values.
+    // caller (see getDetectionContext in src/background/message-router.js),
+    // so keep it to plainly-clonable values.
     return {
         messageId,
         subject: message.subject || '',

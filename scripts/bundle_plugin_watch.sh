@@ -11,7 +11,7 @@ bundle() {
 }
 
 get_hash() {
-    find "$PROJECT_DIR" -not -path '*/node_modules/*' -not -path '*/.*' -not -path '*/zip/*' -not -path '*/scripts/*' -not -path '*/content_scripts/highlight_dates/bundle/*' -type f -printf '%T@\n' 2>/dev/null | sort | md5sum
+    find "$PROJECT_DIR" -not -path '*/node_modules/*' -not -path '*/.*' -not -path '*/zip/*' -not -path '*/scripts/*' -not -path '*/src/content/highlight/bundle/*' -type f -printf '%T@\n' 2>/dev/null | sort | md5sum
 }
 
 cd "$PROJECT_DIR"

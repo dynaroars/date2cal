@@ -1,14 +1,15 @@
-// PLAN.md Phase 6: options page. The only writer of these storage.local
-// keys -- every other file (current_mail_to_date.js, create_calendar_event.js,
-// register_context_menu.js, highlight_dates.js) only reads them via
-// common/settings.js's getSettings().
-import {getSettings} from "../common/settings.js";
-import {localizeDocument} from "../common/i18n.js";
+// Options page. The only writer of these storage.local keys -- every other
+// file (mail-context.js, create-event.js, context-menu.js, highlight.js)
+// only reads them via src/settings.js's getSettings().
+import {getSettings} from "../settings.js";
+import {localizeDocument} from "../i18n.js";
 
 localizeDocument()
 
 const dateOrderSelect = document.getElementById('date-order')
 const calendarSelect = document.getElementById('calendar-select')
+const defaultDurationInput = document.getElementById('default-duration')
+const businessHoursMeridiemCheckbox = document.getElementById('business-hours-meridiem')
 const saveStatus = document.getElementById('save-status')
 
 let saveStatusTimer = null
@@ -49,11 +50,22 @@ async function init() {
     const settings = await getSettings()
 
     dateOrderSelect.value = settings.defaultDateOrder
+    defaultDurationInput.value = settings.defaultDurationMinutes
+    businessHoursMeridiemCheckbox.checked = settings.businessHoursMeridiem
     await populateCalendars(settings.defaultCalendarId)
 
     dateOrderSelect.addEventListener('change', () => save('defaultDateOrder', dateOrderSelect.value))
     calendarSelect.addEventListener('change', () => save('defaultCalendarId', calendarSelect.value))
+
+    defaultDurationInput.addEventListener('change', () => {
+        const minutes = parseInt(defaultDurationInput.value, 10)
+        if (!Number.isFinite(minutes) || minutes <= 0) return
+        save('defaultDurationMinutes', minutes)
+    })
+
+    businessHoursMeridiemCheckbox.addEventListener('change', () => {
+        save('businessHoursMeridiem', businessHoursMeridiemCheckbox.checked)
+    })
 }
 
 init()
-

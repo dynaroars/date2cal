@@ -1,20 +1,19 @@
-// PLAN.md Phase 3, step 17: "Create event from selection" -- the escape
-// hatch for when automatic detection misses something. menus.onClicked
-// already gives us the selected text directly (info.selectionText), so no
-// content-script round trip is needed for the selection itself; only the
-// message's reference date and options-page settings come from
-// getCurrentMessageContext().
-import {detectEvents} from "../common/find_dates.js";
-import {createEvent} from "../create_event_button/create_calendar_event.js";
-import {getCurrentMessageContext} from "../create_event_button/current_mail_to_date.js";
-import {SETTINGS_DEFAULTS} from "../common/settings.js";
+// "Create event from selection" -- the escape hatch for when automatic
+// detection misses something. menus.onClicked already gives us the selected
+// text directly (info.selectionText), so no content-script round trip is
+// needed for the selection itself; only the message's reference date and
+// options-page settings come from getCurrentMessageContext().
+import {detectEvents} from "../detect/index.js";
+import {createEvent} from "../popup/create-event.js";
+import {getCurrentMessageContext} from "../popup/mail-context.js";
+import {SETTINGS_DEFAULTS} from "../settings.js";
 
 const MENU_ID = 'date2cal-from-selection'
 
 async function registerMenu() {
     try {
-        // Idempotent for the same reason as register_content_script_injector.js:
-        // this top-level code re-runs whenever the (non-persistent, MV3)
+        // Idempotent for the same reason as content-script-injector.js: this
+        // top-level code re-runs whenever the (non-persistent, MV3)
         // background page respawns within a single Thunderbird session, and
         // menu registrations persist across that respawn -- so a second
         // create() with the same id throws.
@@ -53,18 +52,18 @@ messenger.menus.onClicked.addListener(async (info) => {
         businessHoursMeridiem: settings.businessHoursMeridiem,
         defaultDurationMinutes: settings.defaultDurationMinutes,
     })
-    const top = candidates[0]
+    const best = candidates[0]
 
-    if (top) {
+    if (best) {
         await createEvent({
-            title: top.title || selectionText.slice(0, 80),
-            start: top.start,
-            end: top.end,
-            isAllDay: top.isAllDay,
-            location: top.location,
-            description: top.description,
-            url: top.url,
-            rrule: top.rrule,
+            title: best.title || selectionText.slice(0, 80),
+            start: best.start,
+            end: best.end,
+            isAllDay: best.isAllDay,
+            location: best.location,
+            description: best.description,
+            url: best.url,
+            rrule: best.rrule,
         })
     } else {
         const start = new Date(referenceDate)

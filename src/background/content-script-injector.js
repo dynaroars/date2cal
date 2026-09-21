@@ -1,8 +1,9 @@
-// Registers the highlight-dates content script for every future message
-// display, and injects it into any message tabs already open right now.
+// Registers the highlight content script for every future message display,
+// and injects it into any message tabs already open right now.
 const CONTENT_SCRIPT_ID = "pluginMailToEvent-highlightDates"
+const HIGHLIGHT_BUNDLE_PATH = "src/content/highlight/bundle/highlight.bundle.js"
 
-async function registerHighlightScript() {
+async function registerHighlightScriptOnce() {
     try {
         // Idempotent: drop any stale registration from a previous
         // background-page lifetime before re-registering.
@@ -13,10 +14,31 @@ async function registerHighlightScript() {
 
     await messenger.scripting.messageDisplay.registerScripts([{
         id: CONTENT_SCRIPT_ID,
-        js: [
-            "content_scripts/highlight_dates/bundle/highlight_dates.bundle.js"
-        ],
+        js: [HIGHLIGHT_BUNDLE_PATH],
     }])
+}
+
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms))
+
+// On a cold Thunderbird launch, this background page can start running
+// before messenger.scripting is fully ready, and registerScripts() fails
+// silently (caught below) -- observed as "highlighting doesn't work until
+// the extension is disabled and re-enabled", which just gives the
+// background page a later, better-timed restart. Retrying with backoff
+// covers the same race without requiring that manual step.
+async function registerHighlightScript() {
+    const retryDelaysMs = [0, 500, 2000]
+    let lastError
+    for (const delay of retryDelaysMs) {
+        if (delay) await sleep(delay)
+        try {
+            await registerHighlightScriptOnce()
+            return
+        } catch (e) {
+            lastError = e
+        }
+    }
+    throw lastError
 }
 
 async function injectIntoOpenMessageTabs() {
@@ -27,9 +49,7 @@ async function injectIntoOpenMessageTabs() {
         try {
             await messenger.scripting.executeScript({
                 target: {tabId: messageTab.id},
-                files: [
-                    "content_scripts/highlight_dates/bundle/highlight_dates.bundle.js"
-                ],
+                files: [HIGHLIGHT_BUNDLE_PATH],
             })
         } catch (e) {
             // One tab's message pane not being ready yet shouldn't stop others.

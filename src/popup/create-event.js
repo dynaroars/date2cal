@@ -1,33 +1,35 @@
-// PLAN.md Phase 4: hands the detected event to Thunderbird's own New Event
-// dialog (via calendar.items.createWithDialog, see
-// experiments/calendar/parent/ext-calendar-items.js) instead of writing it
+// Hands the detected event to Thunderbird's own New Event dialog (via
+// calendar.items.createWithDialog, see
+// experiments/calendar-bridge/parent/items.js) instead of writing it
 // directly. There is no "created item" to return here -- the dialog is
 // user-driven; the user may edit anything and either save or cancel it.
-import {getSettings} from "../common/settings.js";
+import {getSettings} from "../settings.js";
 
-const calendarItems = messenger.calendar.items
+const calendarItemsApi = messenger.calendar.items
 
-function generateUID() {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-        const r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
-        return v.toString(16);
-    });
+function newUuid() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+        const random = Math.random() * 16 | 0
+        const value = c === 'x' ? random : (random & 0x3 | 0x8)
+        return value.toString(16)
+    })
 }
 
-// jCal RECUR value type is a structured object, not a bare string --
+// jCal's RECUR value type is a structured object, not a bare string --
 // converts an RFC 5545 RRULE string ("FREQ=WEEKLY;BYDAY=MO") into that shape.
-const MULTI_VALUE_KEYS = new Set(['byday', 'bymonthday', 'bymonth', 'byyearday', 'byweekno', 'bysetpos'])
-const NUMERIC_KEYS = new Set(['interval', 'count'])
+const MULTI_VALUE_RECUR_KEYS = new Set(['byday', 'bymonthday', 'bymonth', 'byyearday', 'byweekno', 'bysetpos'])
+const NUMERIC_RECUR_KEYS = new Set(['interval', 'count'])
 
-function rruleStringToJCal(rrule) {
+function rruleToJCalRecur(rrule) {
     const recur = {}
     for (const part of rrule.split(';')) {
         const [rawKey, rawValue] = part.split('=')
         if (!rawKey || rawValue === undefined) continue
+
         const key = rawKey.toLowerCase()
-        if (MULTI_VALUE_KEYS.has(key)) {
+        if (MULTI_VALUE_RECUR_KEYS.has(key)) {
             recur[key] = rawValue.split(',')
-        } else if (NUMERIC_KEYS.has(key)) {
+        } else if (NUMERIC_RECUR_KEYS.has(key)) {
             recur[key] = parseInt(rawValue, 10)
         } else {
             recur[key] = rawValue
@@ -40,14 +42,10 @@ function rruleStringToJCal(rrule) {
 // confirmed against Thunderbird's actual ICAL.js (Ical.sys.mjs
 // Time.fromDateTimeString/fromDateString): it slices fixed character
 // positions out of a string like "2015-01-02T03:04:05Z" (jCal's ISO-8601
-// extended form, per RFC 7265 -- distinct from classic iCal's compact
-// "20150102T030405Z" wire format). An earlier version of this file passed
-// [year, month, day, ...] arrays instead; ICAL.js's slice() calls on that
-// array produced empty strings, which its own strictParseInt() then
-// rejected with "Could not extract integer from \"\"" -- caught by
-// clicking a highlighted date in a real Thunderbird session, not by any
-// mocked test (the mock only checked internal consistency of this file's
-// own output, not the real consumer's actual parsing contract).
+// extended form, distinct from classic iCal's compact "20150102T030405Z"
+// wire format). Passing [year, month, day, ...] arrays instead makes
+// ICAL.js's slice() calls produce empty strings, which its own
+// strictParseInt() then rejects with "Could not extract integer from ''".
 function pad(n, len = 2) {
     return String(n).padStart(len, '0')
 }
@@ -82,7 +80,7 @@ function toDateOnlyString(date) {
 /** Resolves which calendar to prefill the dialog with: the one explicitly
  * requested, else the user's saved default, else the first available
  * calendar. Shared by every caller (popup, background message listener,
- * future context menu) so "what's the default calendar" has one answer. */
+ * context menu) so "what's the default calendar" has one answer. */
 async function resolveCalendarId(requestedCalendarId) {
     if (requestedCalendarId) return requestedCalendarId
 
@@ -114,31 +112,29 @@ export async function createEvent({
     location, description, url, rrule, timezone,
 }) {
     const calendarId = await resolveCalendarId(requestedCalendarId)
-    const uid = generateUID()
+    const uid = newUuid()
 
     const valueType = isAllDay ? 'date' : 'date-time'
-    const tzParam = (!isAllDay && timezone) ? {tzid: timezone} : {}
+    const zoneParam = (!isAllDay && timezone) ? {tzid: timezone} : {}
 
     const formatValue = (date) => {
         if (isAllDay) return toDateOnlyString(date)
         return timezone ? toZonedDateTimeString(date, timezone) : toUtcDateTimeString(date)
     }
-    const startValue = formatValue(start)
-    const endValue = formatValue(end)
 
     const properties = [
-        ['dtstart', tzParam, valueType, startValue],
-        ['dtend', tzParam, valueType, endValue],
+        ['dtstart', zoneParam, valueType, formatValue(start)],
+        ['dtend', zoneParam, valueType, formatValue(end)],
         ['summary', {}, 'text', title || ''],
         ['uid', {}, 'text', uid],
     ]
     if (description) properties.push(['description', {}, 'text', description])
     if (location) properties.push(['location', {}, 'text', location])
     if (url) properties.push(['url', {}, 'uri', url])
-    if (rrule) properties.push(['rrule', {}, 'recur', rruleStringToJCal(rrule)])
+    if (rrule) properties.push(['rrule', {}, 'recur', rruleToJCalRecur(rrule)])
 
     try {
-        await calendarItems.createWithDialog(calendarId, {
+        await calendarItemsApi.createWithDialog(calendarId, {
             format: 'jcal',
             type: 'event',
             id: uid,

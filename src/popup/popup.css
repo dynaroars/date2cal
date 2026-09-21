@@ -1,6 +1,7 @@
-/* PLAN.md Phase 3: no custom event-editing form anymore -- Thunderbird's own
- * New Event dialog (Phase 4) handles that. What's left is small: the
- * toolbar-popup candidate list and the inline highlight-date underline. */
+/* No custom event-editing form -- Thunderbird's own New Event dialog handles
+ * that. What's left is small: the toolbar-popup candidate list and the
+ * inline highlight-date underline (shared with the content script, which
+ * bundles this file's text in at build time -- see highlight.js). */
 
 .pluginMailToEvent-popup {
     margin: 0;

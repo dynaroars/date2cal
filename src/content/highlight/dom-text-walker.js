@@ -1,13 +1,13 @@
 // Builds a flat-text view of a DOM subtree, and maps character ranges in
 // that flat text back to real DOM text nodes -- so detection can run
-// directly against exactly the text being highlighted (fixing the root
-// cause of upstream's broken highlighting: it ran detection against a
-// separately-fetched plain-text body, then tried to re-find the matched
-// string in the DOM with indexOf(), which mis-anchors whenever the string
-// repeats or the match spans multiple elements -- see PLAN.md section 1/
-// Phase 3).
+// directly against exactly the text being highlighted. This keeps detected
+// spans and DOM positions in the same coordinate space: running detection
+// against a separately-fetched plain-text body and re-finding the matched
+// string in the DOM with indexOf() mis-anchors whenever the string repeats
+// or a match spans multiple elements, which is the failure mode this file
+// exists to avoid.
 
-const SKIP_TAGS = new Set(['SCRIPT', 'STYLE', 'NOSCRIPT'])
+const NON_TEXT_TAGS = new Set(['SCRIPT', 'STYLE', 'NOSCRIPT'])
 
 /** Walks all text nodes under `root` (depth-first, document order), skipping
  * <script>/<style>, and returns the concatenated text plus a range table
@@ -16,7 +16,7 @@ export function buildFlatText(root, doc = document) {
     const walker = doc.createTreeWalker(root, 4 /* NodeFilter.SHOW_TEXT */, {
         acceptNode(node) {
             const tag = node.parentElement?.tagName
-            return (tag && SKIP_TAGS.has(tag)) ? 2 /* REJECT */ : 1 /* ACCEPT */
+            return (tag && NON_TEXT_TAGS.has(tag)) ? 2 /* REJECT */ : 1 /* ACCEPT */
         },
     })
 
@@ -38,11 +38,11 @@ export function buildFlatText(root, doc = document) {
  * entry per overlapping node. */
 export function findOverlappingNodes(ranges, matchStart, matchEnd) {
     const hits = []
-    for (const r of ranges) {
-        const overlapStart = Math.max(r.start, matchStart)
-        const overlapEnd = Math.min(r.end, matchEnd)
+    for (const range of ranges) {
+        const overlapStart = Math.max(range.start, matchStart)
+        const overlapEnd = Math.min(range.end, matchEnd)
         if (overlapStart < overlapEnd) {
-            hits.push({node: r.node, localStart: overlapStart - r.start, localEnd: overlapEnd - r.start})
+            hits.push({node: range.node, localStart: overlapStart - range.start, localEnd: overlapEnd - range.start})
         }
     }
     return hits
@@ -51,11 +51,11 @@ export function findOverlappingNodes(ranges, matchStart, matchEnd) {
 /** Wraps the [matchStart, matchEnd) span of `flatText` in `wrapperFactory()`
  * elements (one per overlapping text node -- see findOverlappingNodes),
  * calling `wrapperFactory` fresh for each so callers can attach independent
- * click handlers / dataset per wrapped fragment. Returns the created wrapper
+ * click handlers/dataset per wrapped fragment. Returns the created wrapper
  * elements. Splits each overlapping text node into up to three parts
  * (before/match/after) rather than mutating in place, so earlier ranges in
  * `ranges` stay valid for subsequent calls in the same pass as long as you
- * process matches back-to-front (see tag_dates.js). */
+ * process matches back-to-front (see tag-dates.js). */
 export function wrapRange(ranges, matchStart, matchEnd, wrapperFactory) {
     const hits = findOverlappingNodes(ranges, matchStart, matchEnd)
     const wrappers = []

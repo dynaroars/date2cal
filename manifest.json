@@ -16,7 +16,7 @@
     }
   },
   "message_display_action": {
-    "default_popup": "create_event_button/pop_up_button.html",
+    "default_popup": "src/popup/popup.html",
     "default_title": "__MSG_messageActionTitle__",
     "default_icon": "images/calendar-light.svg",
     "theme_icons": [
@@ -29,9 +29,9 @@
   },
   "background": {
     "scripts": [
-      "background/register_content_script_injector.js",
-      "background/register_message_listeners.js",
-      "background/register_context_menu.js"
+      "src/background/content-script-injector.js",
+      "src/background/message-router.js",
+      "src/background/context-menu.js"
     ],
     "type": "module"
   },
@@ -112,7 +112,7 @@
     }
   },
   "options_ui": {
-    "page": "options/options.html",
+    "page": "src/options/options.html",
     "open_in_tab": true
   },
   "default_locale": "en"

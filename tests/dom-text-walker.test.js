@@ -1,6 +1,6 @@
 import {expect} from "chai";
 import {JSDOM} from "jsdom";
-import {buildFlatText, wrapRange} from "../content_scripts/highlight_dates/dom_text_walker.js";
+import {buildFlatText, wrapRange} from "../src/content/highlight/dom-text-walker.js";
 
 function makeBody(html) {
     const dom = new JSDOM(`<html><body>${html}</body></html>`)

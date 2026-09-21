@@ -4,8 +4,8 @@ zip/
 dependencies
 bundle_dependencies
 .claude/settings.local.json
-content_scripts/highlight_dates/bundle
-!content_scripts/highlight_dates/bundle/.gitkeep
+src/content/highlight/bundle
+!src/content/highlight/bundle/.gitkeep
 
 # webext-linter download caches
 .schema-cache/

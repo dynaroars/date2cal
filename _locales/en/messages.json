@@ -51,6 +51,14 @@
         "message": "Preselected when opening the New Event dialog. You can still change it there.",
         "description": "Options page: explanatory text under the calendar dropdown."
     },
+    "optionsDurationLabel": {
+        "message": "Default event duration (minutes)",
+        "description": "Options page: label for the default-duration setting, used when no end time or duration cue is detected."
+    },
+    "optionsBusinessHoursLabel": {
+        "message": "Assume PM for a bare hour like “at 4”",
+        "description": "Options page: label for the business-hours-meridiem checkbox."
+    },
     "optionsSaved": {
 
         "message": "Saved",
