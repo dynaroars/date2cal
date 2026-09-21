@@ -6,7 +6,7 @@ function isoDate(d) {
     return d.toISOString().slice(0, 10)
 }
 
-describe('golden corpus (PLAN.md Phase 5)', () => {
+describe('golden corpus (precision/recall regression gate)', () => {
     const positives = CORPUS.filter(c => c.expect === 'event')
     const negatives = CORPUS.filter(c => c.expect === 'none')
     let truePositives = 0
@@ -50,7 +50,7 @@ describe('golden corpus (PLAN.md Phase 5)', () => {
             `recall ${(recall * 100).toFixed(0)}% (${truePositives}/${positives.length}), ` +
             `precision (neg. guardrail) ${(precision * 100).toFixed(0)}% (${trueNegatives}/${negatives.length})`
         )
-        // PLAN.md Phase 5 step 25: regression gate.
+        // Regression gate: keeps detection precision/recall from silently drifting.
         expect(recall, 'corpus recall dropped below the 0.95 gate').to.be.at.least(0.95)
         expect(precision, 'corpus precision dropped below the 0.95 gate').to.be.at.least(0.95)
     })

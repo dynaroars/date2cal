@@ -1,10 +1,10 @@
-// PLAN.md Phase 5: golden corpus. Each case is representative of a category
-// of real email, not a synthetic edge case (those already live in
-// find_dates.test.js/chrono_rules coverage). `expect: 'event'` cases assert
-// at least one candidate is found, on the right calendar day when
+// Golden corpus (see ARCHITECTURE.md). Each case is representative of a
+// category of real email, not a synthetic edge case (those already live in
+// detect.test.js/rules.js coverage). `expect: 'event'` cases assert at
+// least one candidate is found, on the right calendar day when
 // `expectedDate` is given. `expect: 'none'` cases assert zero candidates --
 // these are the precision guardrails: a false positive here is worse than a
-// miss on an 'event' case (see PLAN.md section 2/Phase 5).
+// miss on an 'event' case.
 //
 // referenceDate is fixed per case (rather than shared) so each case reads
 // standalone and relative expressions ("tomorrow") are checked against a

@@ -19,6 +19,6 @@ whether a bare hour like "at 4" means 4 PM.
 
 [Watch the screencast](images/screenshots/screencast.mp4)
 
-Fork of [LouisJULIEN/thunderbird_plugin_mail_to_event](https://github.com/LouisJULIEN/thunderbird_plugin_mail_to_event)
-(MPL-2.0). Licensed under MPL-2.0 — see `LICENCE`. See `BUILD.md` for build
-and install instructions, and `PLAN.md` for full project history.
+Licensed under MPL-2.0 — see `LICENCE`. See `BUILD.md` for build and install
+instructions, and `ARCHITECTURE.md` for how the detection engine and
+Experiment API bridge fit together.

@@ -1,11 +1,11 @@
 import {expect} from "chai";
 import {JSDOM} from "jsdom";
 
-// current_mail_to_date.js runs inside a Thunderbird extension page, where
+// mail-context.js runs inside a Thunderbird extension page, where
 // `messenger`/`browser` are host-provided globals and `DOMParser` is a
 // standard Window API. Neither exists under plain Node, so this test installs
-// minimal mocks of both -- enough to exercise the fallback logic (PLAN.md
-// Phase 2) without needing Thunderbird itself.
+// minimal mocks of both -- enough to exercise the fallback logic without
+// needing Thunderbird itself.
 const dom = new JSDOM('<!doctype html><html><body></body></html>')
 globalThis.DOMParser = dom.window.DOMParser
 
@@ -37,7 +37,7 @@ function installMessengerMocks({
 }
 
 // Force a fresh module instance per test so each test's mocks take effect --
-// current_mail_to_date.js reads the messenger/browser globals at call time,
+// mail-context.js reads the messenger/browser globals at call time,
 // but re-importing avoids any accidental cross-test state in its own module
 // scope.
 async function loadModule() {
