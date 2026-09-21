@@ -1,3 +1,5 @@
+<img src="images/icon.png" alt="Date2Cal logo" width="96" height="96">
+
 # Date2Cal — Thunderbird add-on
 
 Detects dates and times in an email and turns them into calendar events with
