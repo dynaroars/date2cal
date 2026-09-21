@@ -1,5 +1,5 @@
 import {expect} from "chai";
-import {detectEvents} from "../common/find_dates.js";
+import {detectEvents} from "../src/detect/index.js";
 import {CORPUS} from "./fixtures/corpus.js";
 
 function isoDate(d) {
